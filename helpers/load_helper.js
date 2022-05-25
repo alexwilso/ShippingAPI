@@ -1,6 +1,6 @@
 const model = require('../models/model-datastore');
-const response = require('../utlitiy/response');
-const url = require('../utlitiy/url');
+const response = require('../utility/response');
+const url = require('../utility/url');
 const {Datastore} = require('@google-cloud/datastore');
 const boat_helper = require('../helpers/boat_helpers');
 

@@ -104,6 +104,28 @@ const RetrieveList = (key, req) => {
  * @param key key in datastore
  * @param req int of item id in datastore
  */
+ const RetrieveOwners = (key, owner, onlyPublic) => {
+
+  // Not owner making request, get all public boats for owner
+  if (onlyPublic == true) {
+    const query = datastore.createQuery(key)
+      .filter('owner', owner)
+      .filter('public', 'true');
+    return datastore.runQuery(query);
+  } else { // get all boats for owner provided
+    const query = datastore.createQuery(key)
+    .filter('owner', owner);
+  return datastore.runQuery(query);
+  }
+
+}
+
+/**
+ * Get entity/list of entities from datastore
+ *
+ * @param key key in datastore
+ * @param req int of item id in datastore
+ */
 const Unique = (key, req) => {
   let name = req.body.name;
   const query = datastore
@@ -118,5 +140,6 @@ const Unique = (key, req) => {
     Remove,
     Update,
     RetrieveList,
-    Unique
+    Unique,
+    RetrieveOwners
   };

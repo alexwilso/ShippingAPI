@@ -1,13 +1,40 @@
 "use strict";
 
-const express = require('express');
+const helpers = require("./public/helpers/helperObj.js").obj; // helper functions
 
+const express = require('express');
+const { auth, requiresAuth } = require('express-openid-connect');
 const app = express();
+
+ // Set up handlebars
+ let handlebars = require("express-handlebars").create({
+	defaultLayout:"main",
+	helpers: helpers
+});
+app.disable('etag');
+app.engine("handlebars", handlebars.engine);
+app.set("view engine", "handlebars");
+app.set('views', './views');
 app.set('trust proxy', true);
 
-app.disable('etag');
+// Sets static directory to public
+app.use(express.static('public'));
+
 const boats = require('./routes/boats');
 const loads = require('./routes/loads');
+const owners = require('./routes/owners')
+
+const config = {
+  authRequired: false,
+  auth0Logout: true,
+  baseURL: 'http://localhost:8080',
+  clientID: process.env.CLIENT_ID,
+  issuerBaseURL: `https://${process.env.DOMAIN}`,
+  secret: process.env.CLIENT_SECRET
+};
+
+// auth router attaches /login, /logout, and /callback routes to the baseURL
+app.use(auth(config));
 
 // use the boats.js file to handle endpoints that start with /boats
 app.use('/boats', boats);
@@ -15,9 +42,15 @@ app.use('/boats', boats);
 // use the loads.js file to handle endpoints that start with /loads
 app.use('/loads', loads); 
 
+// use the owners.js file to handle endpoints that start with /owners
+app.use('/owners', owners); 
+
 // Home
 app.get('/', (req, res) => {
-  res.send('Endpoints: /boats, /loads');
+  let context = {};
+  context['login'] = req.oidc.isAuthenticated() ? 'Logged in' : 'Logged out';
+  context['token'] = req.oidc.idToken;
+  res.render('index', context);
 });
 
 // Basic 404 handler

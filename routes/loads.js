@@ -7,9 +7,8 @@ const router = express.Router();
 
 const model = require('../models/model-datastore');
 
-const errors = require('../utlitiy/errors');
-const response = require('../utlitiy/response');
-const url = require('../utlitiy/url');
+const errors = require('../utility/errors');
+const response = require('../utility/response');
 const load_helper = require('../helpers/load_helper');
 
 // Automatically parse request body as JSON

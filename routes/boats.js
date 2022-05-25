@@ -2,14 +2,14 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
+require('dotenv').config()
 
 const router = express.Router();
 
 const model = require('../models/model-datastore');
 
-const errors = require('../utlitiy/errors');
-const response = require('../utlitiy/response');
-const url = require('../utlitiy/url');
+const errors = require('../utility/errors');
+const response = require('../utility/response');
 const boat_helper = require('../helpers/boat_helpers');
 const load_helper = require('../helpers/load_helper');
 
@@ -22,25 +22,12 @@ router.use(bodyParser.json({}));
  *
  * Allows you to create a new boat
 */
-router.post('/', async (req, res, next) =>{
+router.post('/', (req, res, next) =>{
   // Check requst body for errors
   if (errors.checkBoat(req.body)) {
 
-    // Check if boat is unique
-    let unique = await errors.isUnique('boat', req)
-      .then((unique) => {
-
-        boat_helper.insertBoat(req, res);
-        return;
-
-      }).catch((error) =>{
-        // Send reject
-          res
-          .status(403)
-          .setHeader('content-type', 'application/json')
-          .send(JSON.stringify({"Error":'Name must be unique'}));
-          return;
-      });
+    // Insert Boat
+    boat_helper.insertBoat(req, res);
 
   } else { // Incomplete boat recieved, invalid response sent
 
@@ -59,35 +46,11 @@ router.post('/', async (req, res, next) =>{
  * Allows you to get an existing boat
  */
 router.get('/:boat_id', (req, res, next) => {
-  // Checks if boat_id is null
-  if (errors.isNull(req.params.boat_id)) {
-     // Build message
-     let message = JSON.stringify({
-      Error: "Boat id cannot be null"
-    });
-
-    // Send response
-    response.sendResponse(res, message, 404);
-    return
-  };
-
-  // Check if boat_id is not number
-  if (!errors.isNumber(req.params.boat_id)){
-     // Build message
-     let message = JSON.stringify({
-      Error: "Boat id cannot be string"
-    });
-
-    // Send response
-    response.sendResponse(res, message, 404);
-    return
-    
-  }
 
   // Get boat to send to client
   boat_helper.getBoat(req, res, false);
-  
-  });
+
+});
 
 
  /**
@@ -113,7 +76,9 @@ router.delete('/:boat_id', async (req, res, next) => {
   // Get boat
   let boat = await boat_helper.getBoat(req, res, true);
 
-  // Boat does not exist, send error to user
+  let waiting = true;
+
+  // Boat does not exist
   if (!boat.exist) {
 
       // Build message
@@ -125,9 +90,9 @@ router.delete('/:boat_id', async (req, res, next) => {
       response.sendResponse(res, message, 404);
 
       return
-  };
 
-  // boat exist
+
+  };
 
   // Loads that need to be unloaded
   let loads = boat.boat.loads;
@@ -378,7 +343,4 @@ router.get('/:boat_id/loads', async (req, res, next) => {
 
   };
 });
-
-
-
 module.exports = router;
