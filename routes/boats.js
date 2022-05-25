@@ -59,7 +59,6 @@ router.post('/', async (req, res, next) =>{
  * Allows you to get an existing boat
  */
 router.get('/:boat_id', (req, res, next) => {
-  console.log(req.params.boat_id)
   // Checks if boat_id is null
   if (errors.isNull(req.params.boat_id)) {
      // Build message
@@ -69,14 +68,26 @@ router.get('/:boat_id', (req, res, next) => {
 
     // Send response
     response.sendResponse(res, message, 404);
-
     return
+  };
+
+  // Check if boat_id is not number
+  if (!errors.isNumber(req.params.boat_id)){
+     // Build message
+     let message = JSON.stringify({
+      Error: "Boat id cannot be string"
+    });
+
+    // Send response
+    response.sendResponse(res, message, 404);
+    return
+    
   }
 
   // Get boat to send to client
   boat_helper.getBoat(req, res, false);
-
-});
+  
+  });
 
 
  /**

@@ -83,7 +83,7 @@ class errors {
   */
   isNull(value){
     // value is null
-    if (value){
+    if (value === null){
       return true;
     } else {
       return false;
