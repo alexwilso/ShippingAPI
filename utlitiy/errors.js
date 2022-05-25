@@ -36,7 +36,59 @@ class errors {
     };
 
     return attributes;
+  };
+
+  /*
+  * Checks whether key is unique
+  */
+  isUnique(key, req){
+    return new Promise((resolve, reject) => {
+    model.Unique(key, req)
+      .then((respone) => {
+        // Query returns no results, name is unique
+        if (respone[0].length == 0) {
+          resolve(true);
+        } else { // Name is not unique
+          reject();
+        }
+      });
+    });
+
   }
+
+  /*
+  * Checks whether value is number
+  */
+  isNumber(length){
+    if (typeof length == 'number') {
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+  /*
+  * Checks whether value is string
+  */
+  isString(name){
+    if (typeof name == 'string') {
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+  /*
+  * Checks whether value is null
+  */
+  isNull(value){
+    // value is null
+    if (value){
+      return true;
+    } else {
+      return false;
+    }
+  };
 
   // createHangUpError() {
   //   var error = new Error('socket hang up');

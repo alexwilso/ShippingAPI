@@ -22,12 +22,25 @@ router.use(bodyParser.json({}));
  *
  * Allows you to create a new boat
 */
-router.post('/', (req, res, next) =>{
+router.post('/', async (req, res, next) =>{
   // Check requst body for errors
   if (errors.checkBoat(req.body)) {
 
-    // Insert Boat
-    boat_helper.insertBoat(req, res);
+    // Check if boat is unique
+    let unique = await errors.isUnique('boat', req)
+      .then((unique) => {
+
+        boat_helper.insertBoat(req, res);
+        return;
+
+      }).catch((error) =>{
+        // Send reject
+          res
+          .status(403)
+          .setHeader('content-type', 'application/json')
+          .send(JSON.stringify({"Error":'Name must be unique'}));
+          return;
+      });
 
   } else { // Incomplete boat recieved, invalid response sent
 
@@ -46,6 +59,19 @@ router.post('/', (req, res, next) =>{
  * Allows you to get an existing boat
  */
 router.get('/:boat_id', (req, res, next) => {
+  console.log(req.params.boat_id)
+  // Checks if boat_id is null
+  if (errors.isNull(req.params.boat_id)) {
+     // Build message
+     let message = JSON.stringify({
+      Error: "Boat id cannot be null"
+    });
+
+    // Send response
+    response.sendResponse(res, message, 404);
+
+    return
+  }
 
   // Get boat to send to client
   boat_helper.getBoat(req, res, false);
@@ -76,9 +102,7 @@ router.delete('/:boat_id', async (req, res, next) => {
   // Get boat
   let boat = await boat_helper.getBoat(req, res, true);
 
-  let waiting = true;
-
-  // Boat does not exist
+  // Boat does not exist, send error to user
   if (!boat.exist) {
 
       // Build message
@@ -90,9 +114,9 @@ router.delete('/:boat_id', async (req, res, next) => {
       response.sendResponse(res, message, 404);
 
       return
-
-
   };
+
+  // boat exist
 
   // Loads that need to be unloaded
   let loads = boat.boat.loads;

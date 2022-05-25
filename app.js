@@ -6,8 +6,8 @@ const app = express();
 app.set('trust proxy', true);
 
 app.disable('etag');
-const boats = require('./controllers/boats');
-const loads = require('./controllers/loads');
+const boats = require('./routes/boats');
+const loads = require('./routes/loads');
 
 // use the boats.js file to handle endpoints that start with /boats
 app.use('/boats', boats);

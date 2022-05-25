@@ -5,7 +5,7 @@ const {Datastore} = require('@google-cloud/datastore');
 
 // Instantiate a datastore client
 const datastore = new Datastore({
-    projectId: 'assignment4-347720',
+    projectId: 'assignment6-349118',
   });
 
 
@@ -96,13 +96,27 @@ const RetrieveList = (key, req) => {
 
   const query = datastore.createQuery(key);
   return datastore.runQuery(query);
+};
 
-}
+/**
+ * Get entity/list of entities from datastore
+ *
+ * @param key key in datastore
+ * @param req int of item id in datastore
+ */
+const Unique = (key, req) => {
+  let name = req.body.name;
+  const query = datastore
+    .createQuery(key)
+    .filter('name', '=', name);
+    return datastore.runQuery(query);
+  };
 
   module.exports = {
     Insert,
     Retrieve,
     Remove,
     Update,
-    RetrieveList
+    RetrieveList,
+    Unique
   };
