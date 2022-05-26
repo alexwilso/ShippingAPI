@@ -8,6 +8,8 @@ const jwksRsa = require('jwks-rsa');
 const response = require('../utility/response'); // response message
 const model = require('../models/model-datastore'); // datastore class
 const errors = require('../utility/errors'); // error handling
+const ownerErrors = require('../errors/owner_errors')
+const ownerHelpers = require('../helpers/owner_helpers')
 
 const router = express.Router();
 
@@ -33,14 +35,37 @@ const checkJwt = jwt({
    * 
    * Create a new owner
    */
-  router.post('/', checkJwt, async (req, res, next) => {
+  router.post('/', checkJwt, async (req, res, err) => {
     // Add email and sub to body
     req.body.email = req.user.name;
     req.body.sub = req.user.sub;
 
-    console.log(req.user)
-    console.log(req.body)
-    res.send('Success');
+
+    // Add to error file
+      // Make a list of loads
+      let ownersList = await model.RetrieveList('owners', req)
+        .then((owners) => {
+          return owners[0];
+        });
+
+      // Check if owner exist
+      for (let i = 0; i < ownersList.length; i++) {
+        const element = ownersList[i];
+        
+        // If owner exist
+        if (element.sub === req.body.sub) {
+          // Set error message
+          let message = JSON.stringify({Error :"Owner already exist"});
+
+          // Send response
+          response.sendResponse(res, message, 400);
+
+          return;
+        }
+      }
+
+    // Add Owner
+    ownerHelpers.insertOwner(req, res);
   });
 
 
@@ -103,9 +128,16 @@ const checkJwt = jwt({
  * Errors on "/*" routes.
  */
 router.use((err, req, res, next) => {
+  console.log(req.method)
 
   // Delete//Post invalid token
   if (err.name === "UnauthorizedError") {
+
+    if (req.method == "POST") {
+      ownerErrors.postError(res);
+      return;
+      
+    } else {
     let owner = req.path.slice(1, -6);
     model.RetrieveOwners('boat', owner, true)
     .then((result) => {
@@ -124,6 +156,7 @@ router.use((err, req, res, next) => {
           response.sendResponse(res, [], 200);
       }
   })
+  }
   }
 });
 
