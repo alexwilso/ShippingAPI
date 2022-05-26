@@ -28,6 +28,22 @@ const checkJwt = jwt({
   });
 
 
+  /**
+   * Post /owners
+   * 
+   * Create a new owner
+   */
+  router.post('/', checkJwt, async (req, res, next) => {
+    // Add email and sub to body
+    req.body.email = req.user.name;
+    req.body.sub = req.user.sub;
+
+    console.log(req.user)
+    console.log(req.body)
+    res.send('Success');
+  });
+
+
 /**
  * GET /owners/:owner_id/boats
  *
