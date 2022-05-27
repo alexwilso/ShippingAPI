@@ -104,7 +104,7 @@ const RetrieveList = (key, req) => {
  * @param key key in datastore
  * @param req int of item id in datastore
  */
- const RetrieveOwners = (key, owner, onlyPublic) => {
+ const RetrieveBoatsByOwner = (key, owner, onlyPublic) => {
 
   // Not owner making request, get all public boats for owner
   if (onlyPublic == true) {
@@ -141,5 +141,5 @@ const Unique = (key, req) => {
     Update,
     RetrieveList,
     Unique,
-    RetrieveOwners
+    RetrieveBoatsByOwner
   };

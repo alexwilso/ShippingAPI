@@ -13,6 +13,9 @@ const insertLoad = (req, res) => {
     // Set carrier to unassigned
     req.body.carrier = null;
 
+    // Set owner to owner
+    req.body.owner = req.user.sub
+
     // Insert load
     model.Insert('load', req.body)
       .then((load) => {
@@ -66,7 +69,6 @@ const insertLoad = (req, res) => {
           
         };
 
-
         // set response message
         let message = {
           id: load_id,
@@ -74,6 +76,7 @@ const insertLoad = (req, res) => {
           carrier: carrier,
           item: load[0].item,
           creation_date: load[0].creation_date,
+          owner: load[0].owner, 
           self: url.generateUrl(req.protocol, req.get('host'), req.url, 'loads', load_id),
         };
 
@@ -191,7 +194,15 @@ const deleteLoad = (load_id, res) => {
         // Send response
         response.sendResponse(res, message, 204);    
     })
+};
 
+/**
+ * Check load owner
+ */
+const checkOwner = (requester, owner) => {
+  if (requester !== owner) {
+    return false;
+  }
 };
 
 
@@ -200,5 +211,6 @@ module.exports = {
   getLoad,
   getAllLoads,
   assignLoadToBoat,
-  deleteLoad
+  deleteLoad,
+  checkOwner
 }

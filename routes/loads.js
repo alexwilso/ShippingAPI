@@ -1,26 +1,46 @@
 'use strict';
 
+// Set up router
 const express = require('express');
 const bodyParser = require('body-parser');
-
 const router = express.Router();
-
-const model = require('../models/model-datastore');
-
-const errors = require('../utility/errors');
-const response = require('../utility/response');
-const load_helper = require('../helpers/load_helper');
-
-// Automatically parse request body as JSON
 router.use(bodyParser.json({}));
+// Token validation
+const jwt = require('express-jwt');
+const jwksRsa = require('jwks-rsa');
+// datastore model
+const model = require('../models/model-datastore');
+// error handeling
+const errors = require('../errors/utility_errors');
+const ownerErrors = require('../errors/owner_errors');
+// Client Response
+const response = require('../utility/response');
+// helpers
+const load_helper = require('../helpers/load_helper');
+const owner_errors = require('../errors/owner_errors');
+const boat_errors = require('../errors/boat_errors');
+const { json } = require('body-parser');
 
- 
+// Checks for valid jwt
+const checkJwt = jwt({
+  secret: jwksRsa.expressJwtSecret({
+    cache: true,
+    rateLimit: true,
+    jwksRequestsPerMinute: 5,
+    jwksUri: `https://${process.env.DOMAIN}/.well-known/jwks.json`
+  }),
+  // Validate the audience and the issuer.
+  issuer: `https://${process.env.DOMAIN}/`,
+  algorithms: ['RS256']
+});
+
+
  /**
  * POST /loads
  *
  * Allows you to create a new load.
  */
-router.post('/', (req, res, next) => {
+router.post('/', checkJwt, (req, res, next) => {
 
   // Check for missing attributes
   if (errors.checkLoad(req.body)) {
@@ -77,13 +97,22 @@ router.put('/load/:load_id', (req, res, next) => {
  * 
  * Deletes load. Updates boat that was carrying it.
  */
-router.delete('/:load_id', async (req, res, next) => {
+router.delete('/:load_id', checkJwt, async (req, res, next) => {
 
    // Get load
    let load = await load_helper.getLoad(req, res, true);
 
    // If load exist, delete it
    if (load.exist) {
+
+     // Check if correct owner
+     if (load_helper.checkOwner(req.user.sub, load.load.owner) == false) {
+       let message = JSON.stringify({"ERROR":"Only owner can delete load"});
+
+       response.sendResponse(res, message, 401);
+       return;
+     }
+
      load_helper.deleteLoad(load.load.id, res);
      return;
 
@@ -96,9 +125,18 @@ router.delete('/:load_id', async (req, res, next) => {
     response.sendResponse(res, message, 404);
 
     return;
-
   };
 
+}); 
+
+/**
+ * Errors on '/*' routes
+ */
+  router.use((err, req, res, next) => {
+  if((err.name === "UnauthorizedError")) {
+    owner_errors.postError(res);
+    return;
+  }
 });
 
-   module.exports = router;
+module.exports = router;

@@ -4,11 +4,17 @@ const url = require('../utility/url');
 // const load_helper = require('../helpers/load_helper');
 const {Datastore} = require('@google-cloud/datastore');
 
+// Errors
+const boat_errors = require('../errors/boat_errors');
+
 /**
  *  Inserts boat into data store. Sends response
  */
 
 const insertBoat = (req, res) => {
+
+  // Set owner of boat (sub of id token)
+  req.body.owner = req.user.sub;
 
   // Insert boat into datastore
   return model.Insert('boat', req.body)
@@ -51,9 +57,15 @@ const getBoat = async (req, res, check) => {
    return model.Retrieve('boat', boat_id)
    .then(async (boat) => {
 
-
     // Boat exist
      if (boat[0]) {
+
+      // Private boat and incorrect owner, send error
+      ownerRequest = boat[0]['owner'] === req.user.sub
+      if(boat[0]['public'] === 'false' && ownerRequest === false){
+        boat_errors.privateBoat(res);
+        return;
+      }
 
       // list of loads on boat to be returned
       let boatLoads = [];
@@ -85,6 +97,7 @@ const getBoat = async (req, res, check) => {
          name: boat[0].name,
          type: boat[0].type,
          length: boat[0].length,
+         owner: req.user.sub,
          self: url.generateUrl(req.protocol, req.get('host'), req.url, 'boats', boat_id),
          loads: boatLoads // replace with get loads
      };

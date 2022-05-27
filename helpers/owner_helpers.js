@@ -21,7 +21,7 @@ const boat_helper = require('../helpers/boat_helpers');
         req.body['id'] = id;
 
         // Set url of request
-        req.body['self'] = url.generateUrl(req.protocol, req.get('host'), req.url, 'loads', id)
+        req.body['self'] = url.generateUrl(req.protocol, req.get('host'), req.url, 'owners', id)
 
         response.sendResponse(res, req.body, 201);
       });

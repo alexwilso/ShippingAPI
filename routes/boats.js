@@ -1,28 +1,28 @@
 'use strict';
-
-const express = require('express');
-const bodyParser = require('body-parser');
 require('dotenv').config();
+// Set up router
+const express = require('express');
+const router = express.Router();
+const bodyParser = require('body-parser');
+router.use(bodyParser.json({}));
+
+// Token validation 
 const jwt = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
-require('dotenv').config();
 
-const router = express.Router();
-
-const model = require('../models/model-datastore');
 // Error handeling
-const errors = require('../utility/errors');
+const errors = require('../errors/utility_errors');
 const ownerErrors = require('../errors/owner_errors');
 
+// Client response
 const response = require('../utility/response');
 
 // helpers
 const boat_helper = require('../helpers/boat_helpers');
 const load_helper = require('../helpers/load_helper');
 
-
-// Automatically parse request body as JSON
-router.use(bodyParser.json({}));
+// datastore model
+const model = require('../models/model-datastore');
 
 // Checks for valid jwt
 const checkJwt = jwt({
@@ -37,8 +37,6 @@ const checkJwt = jwt({
   algorithms: ['RS256']
 });
 
-
-
 /**
  * POST /boats
  *
@@ -49,6 +47,8 @@ router.post('/', checkJwt, (req, res, next) => {
   try {
     // Check requst body for errors
     if (errors.checkBoat(req.body)) {
+
+      // Check if user exist
 
       // Insert Boat
       boat_helper.insertBoat(req, res);
@@ -80,7 +80,7 @@ router.post('/', checkJwt, (req, res, next) => {
  *
  * Allows you to get an existing boat
  */
-router.get('/:boat_id', (req, res, next) => {
+router.get('/:boat_id', checkJwt, (req, res, next) => {
 
   // Get boat to send to client
   boat_helper.getBoat(req, res, false);

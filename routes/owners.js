@@ -1,20 +1,22 @@
 'use strict';
-
+require('dotenv').config();
+// Set up router
 const express = require('express');
 const bodyParser = require('body-parser');
-require('dotenv').config();
+const router = express.Router();
+router.use(bodyParser.json({}));
+// Token validation
 const jwt = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
-const response = require('../utility/response'); // response message
-const model = require('../models/model-datastore'); // datastore class
-const errors = require('../utility/errors'); // error handling
+// Error Handeling
+const errors = require('../errors/utility_errors');
 const ownerErrors = require('../errors/owner_errors');
+// Client Response
+const response = require('../utility/response');
 const ownerHelpers = require('../helpers/owner_helpers');
+// datastore model
+const model = require('../models/model-datastore');
 
-const router = express.Router();
-
-// Automatically parse request body as JSON
-router.use(bodyParser.json({}));
 
 // Checks for valid jwt
 const checkJwt = jwt({
@@ -29,7 +31,6 @@ const checkJwt = jwt({
     algorithms: ['RS256']
   });
 
-
   /**
    * Post /owners
    * 
@@ -40,7 +41,7 @@ const checkJwt = jwt({
     req.body.email = req.user.name;
     req.body.sub = req.user.sub;
 
-    // Make a list of loads
+    // Make a list of owners
     let ownersList = await model.RetrieveList('owners', req)
       .then((owners) => {
         return owners[0];
@@ -55,6 +56,41 @@ const checkJwt = jwt({
     ownerHelpers.insertOwner(req, res);
   });
 
+  /**
+ * Get /owners
+ * 
+ * Gets a list of all owners
+ */
+router.get('/', checkJwt, async (req, res, next) => {
+
+  // Returns a list of all owners
+  model.RetrieveList('owners', req)
+    .then((result) => {
+          // if owners, send response
+          if (result[0]){
+
+            // Loop through response, add id from datastore to response
+            for (let index = 0; index < result[0].length; index++) {
+                const objsymbol = Object.getOwnPropertySymbols(result[0][index])
+                let owner_id =parseInt(result[0][index][objsymbol[0]].id)
+                result[0][index]['id'] = owner_id;
+                // Remove boats attribute
+                delete result[0][index]['boats'];
+                // Rename sub attribute
+                result[0][index]['owner'] = result[0][index]['sub']
+                delete result[0][index]['sub'];
+            }
+            // Send response
+            response.sendResponse(res, result[0], 200);
+
+        } else { // no owners, send empty list
+            response.sendResponse(res, [], 200);
+        }
+    })
+    .catch((err) => {
+      next(err);
+    });
+});
 
 /**
  * GET /owners/:owner_id/boats
@@ -67,7 +103,7 @@ const checkJwt = jwt({
 
     // If owner is accessing their boats, display all
     if (owner === req.user.sub) {
-      model.RetrieveOwners('boat', owner, false)
+      model.RetrieveBoatsByOwner('boat', owner, false)
       .then((result) => {
         // if boats, send response
         if (result[0]){
@@ -111,8 +147,7 @@ const checkJwt = jwt({
     // res.send('test')
   });
 
-
-  /**
+/**
  * Errors on "/*" routes.
  */
 router.use((err, req, res, next) => {
@@ -120,7 +155,7 @@ router.use((err, req, res, next) => {
   // Delete//Post invalid token
   if (err.name === "UnauthorizedError") {
 
-    if (req.method == "POST") {
+    if (req.method == "POST" || req.method == "GET") {
       ownerErrors.postError(res);
       return;
       

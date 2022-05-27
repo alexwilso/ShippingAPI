@@ -53,6 +53,11 @@ app.get('/', (req, res) => {
   res.render('index', context);
 });
 
+// Send user
+app.get('/user', requiresAuth(), (req, res) => {
+  res.send(JSON.stringify(req.oidc.user))
+});
+
 // Basic 404 handler
 app.use((req, res) => {
   res.status(404).send('Not Found');
