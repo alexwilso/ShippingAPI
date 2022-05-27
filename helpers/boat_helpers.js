@@ -23,6 +23,9 @@ const insertBoat = (req, res) => {
       // Generate url of request
       req.body['self'] = url.generateUrl(req.protocol, req.get('host'), req.url, 'boats', id);
 
+      // Set owner of boat (sub of id token)
+      req.body.owner = req.user.sub;
+
       // Need to get loads
       req.body['loads'] = [];
 
@@ -130,13 +133,21 @@ const getBoat = async (req, res, check) => {
 const getAllBoats = async (req, res) => {
 
     // Get all boats
-    await model.Retrieve('boat', null, req)
+    await model.RetrieveList('boat', req.user.sub)
     .then((boat) => {
+
+      // Loop through response, add id from datastore to response
+      for (let index = 0; index < result[0].length; index++) {
+        const objsymbol = Object.getOwnPropertySymbols(result[0][index])
+        let boat_id =parseInt(result[0][index][objsymbol[0]].id)
+        result[0][index]['id'] = boat_id;
+      }
 
       // Add boats to return message
       formattedBoats = {
         boats: boat[0]
       }
+      
       // Add next page to return message
       if(boat[1].moreResults !== Datastore.NO_MORE_RESULTS ){
        // Encode cursor
@@ -145,11 +156,12 @@ const getAllBoats = async (req, res) => {
         // Set start postion
         formattedBoats.next = url.generateUrl(req.protocol, req.get('host'), req.baseUrl, 'boats?cursor=', s);
       };
+
       // Boat exist
       if (boat[0]) {
         
-        // send to Client
-        response.sendResponse(res, formattedBoats, 200);
+      // send to Client
+      response.sendResponse(res, formattedBoats, 200);
       };
     });
 };

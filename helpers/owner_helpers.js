@@ -4,7 +4,6 @@ const url = require('../utility/url');
 const {Datastore} = require('@google-cloud/datastore');
 const boat_helper = require('../helpers/boat_helpers');
 
-
 /**
  *  Insert owner into datastore.
  */
@@ -27,6 +26,7 @@ const boat_helper = require('../helpers/boat_helpers');
         response.sendResponse(res, req.body, 201);
       });
   };
+
 
   module.exports = {
     insertOwner

@@ -2,14 +2,14 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
-require('dotenv').config()
+require('dotenv').config();
 const jwt = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
 const response = require('../utility/response'); // response message
 const model = require('../models/model-datastore'); // datastore class
 const errors = require('../utility/errors'); // error handling
-const ownerErrors = require('../errors/owner_errors')
-const ownerHelpers = require('../helpers/owner_helpers')
+const ownerErrors = require('../errors/owner_errors');
+const ownerHelpers = require('../helpers/owner_helpers');
 
 const router = express.Router();
 
@@ -40,29 +40,16 @@ const checkJwt = jwt({
     req.body.email = req.user.name;
     req.body.sub = req.user.sub;
 
+    // Make a list of loads
+    let ownersList = await model.RetrieveList('owners', req)
+      .then((owners) => {
+        return owners[0];
+      });
 
-    // Add to error file
-      // Make a list of loads
-      let ownersList = await model.RetrieveList('owners', req)
-        .then((owners) => {
-          return owners[0];
-        });
-
-      // Check if owner exist
-      for (let i = 0; i < ownersList.length; i++) {
-        const element = ownersList[i];
-        
-        // If owner exist
-        if (element.sub === req.body.sub) {
-          // Set error message
-          let message = JSON.stringify({Error :"Owner already exist"});
-
-          // Send response
-          response.sendResponse(res, message, 400);
-
-          return;
-        }
-      }
+    // Check if owner already exist
+    if(ownerErrors.checkExist(res, ownersList, req.body.sub)){
+      return
+    }
 
     // Add Owner
     ownerHelpers.insertOwner(req, res);
@@ -124,11 +111,11 @@ const checkJwt = jwt({
     // res.send('test')
   });
 
+
   /**
  * Errors on "/*" routes.
  */
 router.use((err, req, res, next) => {
-  console.log(req.method)
 
   // Delete//Post invalid token
   if (err.name === "UnauthorizedError") {
@@ -159,6 +146,4 @@ router.use((err, req, res, next) => {
   }
   }
 });
-
-
   module.exports = router;

@@ -2,14 +2,21 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
-require('dotenv').config()
+require('dotenv').config();
+const jwt = require('express-jwt');
+const jwksRsa = require('jwks-rsa');
+require('dotenv').config();
 
 const router = express.Router();
 
 const model = require('../models/model-datastore');
-
+// Error handeling
 const errors = require('../utility/errors');
+const ownerErrors = require('../errors/owner_errors');
+
 const response = require('../utility/response');
+
+// helpers
 const boat_helper = require('../helpers/boat_helpers');
 const load_helper = require('../helpers/load_helper');
 
@@ -17,26 +24,54 @@ const load_helper = require('../helpers/load_helper');
 // Automatically parse request body as JSON
 router.use(bodyParser.json({}));
 
+// Checks for valid jwt
+const checkJwt = jwt({
+  secret: jwksRsa.expressJwtSecret({
+    cache: true,
+    rateLimit: true,
+    jwksRequestsPerMinute: 5,
+    jwksUri: `https://${process.env.DOMAIN}/.well-known/jwks.json`
+  }),
+  // Validate the audience and the issuer.
+  issuer: `https://${process.env.DOMAIN}/`,
+  algorithms: ['RS256']
+});
+
+
+
 /**
  * POST /boats
  *
  * Allows you to create a new boat
 */
-router.post('/', (req, res, next) =>{
-  // Check requst body for errors
-  if (errors.checkBoat(req.body)) {
+router.post('/', checkJwt, (req, res, next) => {
+  
+  try {
+    // Check requst body for errors
+    if (errors.checkBoat(req.body)) {
 
-    // Insert Boat
-    boat_helper.insertBoat(req, res);
+      // Insert Boat
+      boat_helper.insertBoat(req, res);
 
-  } else { // Incomplete boat recieved, invalid response sent
+    } else { // Incomplete boat recieved, invalid response sent
 
-      // Set error message
-      let message = JSON.stringify({Error :"The request object is missing at least one of the required attributes"});
+        // Set error message
+        let message = JSON.stringify({Error :"The request object is missing at least one of the required attributes"});
 
-      // Send response
-      response.sendResponse(res, message, 400);
-  }
+        // Send response
+        response.sendResponse(res, message, 400);
+    }
+} catch(error) {
+  console.log(error);
+
+  // Json Message
+  let errorMessage = {
+      "Error": "invalid permission..."
+  };
+
+  // Send response to client
+  response.sendResponse(res, errorMessage, 401);
+}
 });
 
 
@@ -57,12 +92,32 @@ router.get('/:boat_id', (req, res, next) => {
  * GET /boats
  *
  * List all the boats
-*/
-router.get('/', (req, res, next) => {
-  
-    // Get all boats
-    boat_helper.getAllBoats(req, res);
+ */
+  router.get('/', checkJwt, (req, res, next) => {
 
+    try {
+        model.RetrieveList('boat', req.user.sub)
+        .then((result) => {
+            // if boats, send response
+            if (result[0]){
+
+                // Loop through response, add id from datastore to response
+                for (let index = 0; index < result[0].length; index++) {
+                    const objsymbol = Object.getOwnPropertySymbols(result[0][index])
+                    let boat_id =parseInt(result[0][index][objsymbol[0]].id)
+                    result[0][index]['id'] = boat_id;
+                }
+
+                // Send response
+                response.sendResponse(res, result[0], 200);
+            } else { // no boats for user, send empty list
+                response.sendResponse(res, [], 200);
+            }
+        })
+        .catch(err => console.log(err));
+    } catch (error) {
+        next(error)
+    }
 });
 
  /**
@@ -343,4 +398,54 @@ router.get('/:boat_id/loads', async (req, res, next) => {
 
   };
 });
+
+/**
+ * Errors on "/*" routes.
+ */
+ router.use((err, req, res, next) => {
+
+  // Delete//Post invalid token
+  if (err.name === "UnauthorizedError" && (req.method === 'POST' || req.method === "DELETE")) {
+    // Send error to client
+    ownerErrors.postError(res);
+    return;
+  }
+
+  // Get invalid Token
+  if (err.name === "UnauthorizedError" && req.method === 'GET') {
+
+      // Display all boats with public
+      try {
+          model.RetrieveList('boat', null)
+          .then((result) => {
+              // if boats, send response
+              if (result[0]){
+
+                  // Loop through response, add id from datastore to response
+                  for (let index = 0; index < result[0].length; index++) {
+                      const objsymbol = Object.getOwnPropertySymbols(result[0][index])
+                      let boat_id =parseInt(result[0][index][objsymbol[0]].id)
+                      result[0][index]['id'] = boat_id;
+                  }
+
+                  // Send response
+                  response.sendResponse(res, result[0], 200);
+                  return;
+              } else { // no boats for user, send empty list
+
+                  // Send response
+                  response.sendResponse(res, [], 200);
+                  return;
+              }
+          })
+            .catch(err => console.log(err));
+      } catch (error) {
+          next(error)
+      }
+  }
+  else {
+      next(err);
+  }
+});
+
 module.exports = router;

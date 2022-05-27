@@ -34,7 +34,7 @@ const Retrieve = async (key, id, req) => {
   if (id == null) {
 
     // Set limit
-    var query = datastore.createQuery(key).limit(3)
+    var query = datastore.createQuery(key).limit(5);
 
     // If cursor in parameter
     if (Object.keys(req.query).includes('cursor')){

@@ -7,7 +7,7 @@ class errors {
   * Checks whether boat passed contains all attributes
   */
   checkBoat(value){
-    const attributes = ["name", "type", "length"];
+    const attributes = ["name", "type", "length", "public"];
     
     // Returns true if all attributes are found
     return ((this.checkArray(value, attributes).length) == 0);

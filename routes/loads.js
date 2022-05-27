@@ -63,6 +63,15 @@ router.get('/', (req, res, next) => {
 
 });
 
+/**
+ * Put /loads/:/load_id
+ * 
+ * Edit a load
+ */
+router.put('/load/:load_id', (req, res, next) => {
+
+});
+
   /**
  * DELETE /loads/:load_id
  * 
