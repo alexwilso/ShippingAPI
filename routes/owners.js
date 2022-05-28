@@ -99,12 +99,13 @@ router.get('/', checkJwt, async (req, res, next) => {
  */
   router.get('/:owner_id/boats', checkJwt, async (req, res, next) => {
     // Set owner 
-    let owner = req.params.owner_id;
+    let owner = await model.Retrieve('owners', parseInt(req.params.owner_id), req);
 
     // If owner is accessing their boats, display all
-    if (owner === req.user.sub) {
-      model.RetrieveBoatsByOwner('boat', owner, false)
+    if (owner[0].sub == req.user.sub) {
+      model.RetrieveBoatsByOwner('boat', req.user.sub, false)
       .then((result) => {
+        console.log(result);
         // if boats, send response
         if (result[0]){
 
@@ -117,9 +118,11 @@ router.get('/', checkJwt, async (req, res, next) => {
 
         // send response
         response.sendResponse(res, result[0], 200);
+        return;
         } 
         else { // no boats for user, send empty list
             response.sendResponse(res, [], 200);
+            return;
         }
     })
     // handle error

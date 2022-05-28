@@ -189,14 +189,13 @@ router.delete('/:boat_id', async (req, res, next) => {
  * 
  * Assigns load to a boat. Load must not be already assigned.
  */
-   router.put('/:boat_id/loads/:load_id', async (req, res, next) => {
+   router.put('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
 
     // Get boat
     let boat = await boat_helper.getBoat(req, res, true);
      
     // Get load
     let load = await load_helper.getLoad(req, res, true);
-
 
     // Assigned load
     let unassigned = true;
@@ -217,7 +216,18 @@ router.delete('/:boat_id', async (req, res, next) => {
       // Send response
       response.sendResponse(res, message, 404);
 
+      return;
+
     };
+
+    // Check if correct owner
+    if (load_helper.checkOwner(req.user.sub, load.load.owner) == false) {
+    let message = JSON.stringify({"Error":"Only load owner can add load to boat"});
+
+    response.sendResponse(res, message, 401);
+    return;
+    }
+
 
     // If load exist
     if (load.exist && exist) {
@@ -246,7 +256,8 @@ router.delete('/:boat_id', async (req, res, next) => {
         volume: load.load.volume,
         item: load.load.item,
         creation_date: load.load.creation_date,
-        carrier: boat.boat.id
+        carrier: boat.boat.id,
+        owner: load.load.owner
       }
       
       // Assign
@@ -260,15 +271,18 @@ router.delete('/:boat_id', async (req, res, next) => {
  * 
  * Deletes load from boat. 
  */
-router.delete('/:boat_id/loads/:load_id', async (req, res, next) => {
-
+router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
+    // Store boat_id, it changes with request
+    let boat_id_request = req.params.boat_id;
     let exist = true;
 
     // Get boat
     let boat = await boat_helper.getBoat(req, res, true);
-
     // Get load
     let load = await load_helper.getLoad(req, res, true);
+    // Revert boat_id to original
+    req.params.boat_id = boat_id_request;
+    console.log(load.load.carrier);
 
     // If load exist
     if (load.exist) {
@@ -294,7 +308,7 @@ router.delete('/:boat_id/loads/:load_id', async (req, res, next) => {
         
       // Build message
       let message = JSON.stringify({
-        Error: "No boat with this boat_id is loaded with the load with this load_id"
+        Error: "The specified boat and/or load does not exist"      
       });
 
       // exist is set to false
@@ -310,12 +324,13 @@ router.delete('/:boat_id/loads/:load_id', async (req, res, next) => {
     // Both boat and load exist
     // if (exist) {
     // Load is on boat
-      if (load.load.carrier.id === req.params.boat_id) {
+      if (load.load.carrier.id == req.params.boat_id) {
          // Load to be updated
          let updatedLoad = {
           volume: load.load.volume,
           item: load.load.item,
           creation_date: load.load.creation_date,
+          owner: load.load.owner,
           carrier: null
         }
         
@@ -404,12 +419,12 @@ router.get('/:boat_id/loads', async (req, res, next) => {
  */
  router.use((err, req, res, next) => {
 
-  // Delete//Post invalid token
-  if (err.name === "UnauthorizedError" && (req.method === 'POST' || req.method === "DELETE")) {
-    // Send error to client
-    ownerErrors.postError(res);
-    return;
-  }
+  // // Delete//Post invalid token
+  // if (err.name === "UnauthorizedError" && (req.method === 'POST' || req.method === "DELETE")) {
+  //   // Send error to client
+  //   ownerErrors.postError(res);
+  //   return;
+  // }
 
   // Get invalid Token
   if (err.name === "UnauthorizedError" && req.method === 'GET') {
@@ -444,7 +459,8 @@ router.get('/:boat_id/loads', async (req, res, next) => {
       }
   }
   else {
-      next(err);
+    ownerErrors.postError(res);
+    return;
   }
 });
 

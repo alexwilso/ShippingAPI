@@ -200,6 +200,7 @@ const deleteLoad = (load_id, res) => {
  * Check load owner
  */
 const checkOwner = (requester, owner) => {
+  console.log(requester, owner);
   if (requester !== owner) {
     return false;
   }

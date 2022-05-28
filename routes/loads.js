@@ -57,14 +57,14 @@ router.post('/', checkJwt, (req, res, next) => {
     response.sendResponse(res, message, 400);
     
   }
-})
+});
 
   /**
  * GET /loads/:load_id
  * 
  * Allows you to get an existing slip.
  */
-router.get('/:load_id', (req, res, next) => {
+router.get('/:load_id', checkJwt, (req, res, next) => {
   
   // Get load to send to client
   load_helper.getLoad(req, res, false);
@@ -76,7 +76,7 @@ router.get('/:load_id', (req, res, next) => {
  * 
  * List all the loads.
  */
-router.get('/', (req, res, next) => {
+router.get('/', checkJwt, (req, res, next) => {
   
   // Get all loads and send to client
   load_helper.getAllLoads(req, res);
@@ -93,7 +93,7 @@ router.put('/load/:load_id', (req, res, next) => {
 });
 
   /**
- * DELETE /loads/:load_id
+ * DELETE /loads/:load_ids
  * 
  * Deletes load. Updates boat that was carrying it.
  */
@@ -107,7 +107,7 @@ router.delete('/:load_id', checkJwt, async (req, res, next) => {
 
      // Check if correct owner
      if (load_helper.checkOwner(req.user.sub, load.load.owner) == false) {
-       let message = JSON.stringify({"ERROR":"Only owner can delete load"});
+       let message = JSON.stringify({"Error":"Only owner can delete load"});
 
        response.sendResponse(res, message, 401);
        return;
