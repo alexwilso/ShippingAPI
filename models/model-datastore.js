@@ -29,12 +29,12 @@ const Insert = (key, value) => {
  * @param id int of item id in datastore
  */
 const Retrieve = async (key, id, req) => {
-
   // Getting list of all entities
   if (id == null) {
 
     // Set limit
     var query = datastore.createQuery(key).limit(5);
+    console.log(req.query);
 
     // If cursor in parameter
     if (Object.keys(req.query).includes('cursor')){

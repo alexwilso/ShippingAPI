@@ -93,12 +93,14 @@ const getBoat = async (req, res, check) => {
     // Boat exist
      if (boat[0]) {
 
+
       // Private boat and incorrect owner, send error
-      ownerRequest = boat[0]['owner'] === req.user.sub
-      if(boat[0]['public'] === 'false' && ownerRequest === false){
+      let ownerRequest = boat[0]['owner'] == req.user.sub
+      if(boat[0]['public'] == 'false' && ownerRequest == false){
         boat_errors.privateBoat(res);
         return;
       }
+
 
       // list of loads on boat to be returned
       let boatLoads = [];
@@ -137,7 +139,7 @@ const getBoat = async (req, res, check) => {
 
      // if check no response to be sent to client, return true
      if (check) {
-
+       
         // Set response details
         checkResponse.boat = message;
         checkResponse.exist = true;
@@ -230,12 +232,30 @@ const deleteBoat = (boat_id, res) => {
         // Send response
         response.sendResponse(res, message, 204);    
     })
+};
 
+/**
+ * Loop through list of boats, adding id to each boat
+ * @param {list of boats} boats 
+ */
+const addIdToBoats = (boats) => {
+
+    // Loop through response, add id from datastore to response
+    for (let index = 0; index < boats.length; index++) {
+      const objsymbol = Object.getOwnPropertySymbols(boats[index])
+      let boat_id =parseInt(boats[index][objsymbol[0]].id)
+      boats[index]['id'] = boat_id;
+  }
+  return boats;
+
+  // // Send response
+  // response.sendResponse(res, result[0], 200);
 }
 
 module.exports = {
   insertBoat,
   getBoat,
   getAllBoats,
-  deleteBoat
+  deleteBoat,
+  addIdToBoats
 }

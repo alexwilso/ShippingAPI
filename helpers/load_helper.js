@@ -88,7 +88,6 @@ const insertLoad = (req, res) => {
         if (unloading) {
           return load[0];
         }
-        console.log(load[0])
         // If load on carrier, set carrier information
         if (load[0].carrier != null) {
           
@@ -241,6 +240,39 @@ const checkOwner = (requester, owner) => {
   }
 };
 
+/**
+ * // Gets load details for all loads on boat with matching id
+ * @param {list of loads} loads 
+ * @param {request} req 
+ * @param {response} res 
+ */
+const loadsForBoatWithId = async (loads, req, res) => {
+  let returnLoads = [];
+
+  for (let index = 0; index < loads.length; index++) {
+    const element = loads[index];
+
+    // Sets req.params
+    req.params.load_id = element.id;
+
+    // Gets load
+    let currentLoad = await getLoad(req, res, true, false);
+    console.log(currentLoad);
+
+    // Load object to be added to list
+    let currentLoadObj = {
+      id: currentLoad.load.id, 
+      item: currentLoad.load.item,
+      creation_date: currentLoad.load.creation_date, 
+      self: currentLoad.load.self
+    };
+
+    // Adds load to return list
+    returnLoads.push(currentLoadObj);
+  };
+  return returnLoads;
+};
+
 
 module.exports = {
   insertLoad,
@@ -249,5 +281,6 @@ module.exports = {
   assignLoadToBoat,
   deleteLoad,
   checkOwner,
-  unloadLoads
+  unloadLoads,
+  loadsForBoatWithId
 }

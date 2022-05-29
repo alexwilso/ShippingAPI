@@ -49,7 +49,6 @@ router.post('/', checkJwt, (req, res, next) => {
     // Check requst body for errors
     if (errors.checkBoat(req.body)) {
 
-      // Check if user exist
 
       // Insert Boat
       boat_helper.insertBoat(req, res);
@@ -86,27 +85,22 @@ router.get('/:boat_id', checkJwt, (req, res, next) => {
  * List all the boats
  */
   router.get('/', checkJwt, (req, res, next) => {
-
     try {
-        model.RetrieveList('boat', req.user.sub)
+        model.RetrieveList('boat', null, req.user.sub)
         .then((result) => {
             // if boats, send response
             if (result[0]){
 
-                // Loop through response, add id from datastore to response
-                for (let index = 0; index < result[0].length; index++) {
-                    const objsymbol = Object.getOwnPropertySymbols(result[0][index])
-                    let boat_id =parseInt(result[0][index][objsymbol[0]].id)
-                    result[0][index]['id'] = boat_id;
-                }
+                // Add id to boats
+                let boatsId = boat_helper.addIdToBoats(result[0]);
 
                 // Send response
-                response.sendResponse(res, result[0], 200);
+                response.sendResponse(res, boatsId, 200);
+
             } else { // no boats for user, send empty list
                 response.sendResponse(res, [], 200);
             }
         })
-        .catch(err => console.log(err));
     } catch (error) {
         next(error)
     }
@@ -119,9 +113,13 @@ router.get('/:boat_id', checkJwt, (req, res, next) => {
  */
 
 router.delete('/:boat_id', checkJwt, async (req, res, next) => {
-
+  // Store boat_id, it changes with request
+  let boat_id_request = req.params.boat_id; 
   // Get boat
   let boat = await boat_helper.getBoat(req, res, true);
+  // Revert boat_id to original
+  req.params.boat_id = boat_id_request;
+
 
   // Boat does not exist
   if (!boat.exist) {
@@ -130,7 +128,7 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
     return;
   };
   
-  // Check incorrect owner
+  // Check incorrect owner, sends error to client if incorrect
   if (boatErrors.wrongOwner(req.user.sub, boat.boat.owner, res)) {
     return;
   }
@@ -151,65 +149,45 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
  * Assigns load to a boat. Load must not be already assigned.
  */
    router.put('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
-
-    // Get boat
-    let boat = await boat_helper.getBoat(req, res, true);
-     
-    // Get load
-    let load = await load_helper.getLoad(req, res, true, false);
-
-    // Assigned load
-    let unassigned = true;
-    
-    let exist = true;
-
-    // If boat and load don't exist
-    if (!boat.exist || !load.exist) {
-      
-      // Build message
-      let message = JSON.stringify({
-        Error: "The specified boat and/or load does not exist"
-      });
-
-      // exist is set to false
-      exist = false;
-
-      // Send response
-      response.sendResponse(res, message, 404);
-
-      return;
-
-    };
-
-    // Check if correct owner
-    if (load_helper.checkOwner(req.user.sub, load.load.owner) == false) {
-    let message = JSON.stringify({"Error":"Only load owner can add load to boat"});
-    response.sendResponse(res, message, 401);
-    return;
-    }
+      // Store boat_id, it changes with request
+      let boat_id_request = req.params.boat_id; 
+      // Get boat/load
+      let boat = await boat_helper.getBoat(req, res, true);
+      let load = await load_helper.getLoad(req, res, true, false);
+      // Revert boat_id to original
+      req.params.boat_id = boat_id_request;
 
 
-    // If load exist
-    if (load.exist && exist) {
-      
+      // If boat and load don't exist
+      if (!boat.exist || !load.exist) {
+        
+        // Build message and send response
+        let message = JSON.stringify({
+          Error: "The specified boat and/or load does not exist"});
+        response.sendResponse(res, message, 404);
+        return;
+      };
+
+      // Check if correct owner
+      if (load_helper.checkOwner(req.user.sub, load.load.owner) == false) {
+
+        // Build message and send resposne
+        let message = JSON.stringify({"Error":"Only load owner can add load to boat"});
+        response.sendResponse(res, message, 401);
+        return;
+      };
+
+        
       // And load is unassigned
       if (load.load.carrier != null) {
 
-              // Build message
+          // Build message and send response
         let message = JSON.stringify({
-          Error: "The load is already loaded on another boat"
-        });
-
-        // Assigend is true
-        unassigned = false;
-
-        // Send response
+          Error: "The load is already loaded on another boat"});
         response.sendResponse(res, message, 403);
-      };
-    };
+        return;
 
-    // Assign load to boat
-    if (exist && unassigned) {
+      };
 
       // Load to be updated
       let updatedLoad = {
@@ -220,10 +198,9 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
         owner: load.load.owner
       }
       
-      // Assign
+      // Assign load to boat
       load_helper.assignLoadToBoat(updatedLoad, res, false, load.load.id);
-      
-    };
+      return;
    });
 
 /**
@@ -234,52 +211,45 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
 router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
     // Store boat_id, it changes with request
     let boat_id_request = req.params.boat_id;
-    let exist = true;
 
-    // Get boat
+    // Get boat/load
     let boat = await boat_helper.getBoat(req, res, true);
-    // Get load
     let load = await load_helper.getLoad(req, res, true, false);
     // Revert boat_id to original
     req.params.boat_id = boat_id_request;
 
-    // If load exist
-    if (load.exist) {
-    
-      // And load not assigned to carrier
-      if (load.load.carrier == null) {
-          // Build message
-          let message = JSON.stringify({
-            Error: "No boat with this boat_id is loaded with the load with this load_id"
-          });
-
-          // Send response
-          response.sendResponse(res, message, 404);
-
-          return;
-        
-      };
-  };
-
     // If boat and load don't exist
     if (!boat.exist || !load.exist) {
-        
-      // Build message
+    
+      // Build message and send response
       let message = JSON.stringify({
-        Error: "The specified boat and/or load does not exist"      
-      });
-
-      // exist is set to false
-      exist = false;
-
-      // Send response
+        Error: "The specified boat and/or load does not exist"});
       response.sendResponse(res, message, 404);
-
       return;
     };
-    
-    // Both boat and load exist
 
+    // Check owner
+    // Check if correct owner
+    if (load_helper.checkOwner(req.user.sub, load.load.owner) == false) {
+
+      // Build message and send resposne
+      let message = JSON.stringify({"Error":"Only load owner can remove load from boat"});
+      response.sendResponse(res, message, 401);
+      return;
+    }; 
+    
+    // load not assigned to carrier
+    if (load.load.carrier == null || load.load.carrier.id != req.params.boat_id) {
+
+        // Build message and send response
+        let message = JSON.stringify({
+          Error: "No boat with this boat_id is loaded with the load with this load_id"});
+        response.sendResponse(res, message, 404);
+        return;
+      
+    };
+
+    // Both boat and load exist
     // Load is on boat
       if (load.load.carrier.id == req.params.boat_id) {
          // Load to be updated
@@ -289,23 +259,10 @@ router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
           creation_date: load.load.creation_date,
           owner: load.load.owner,
           carrier: null
-        }
-        
+        };
         // Update boat
         load_helper.assignLoadToBoat(updatedLoad, res, false, load.load.id);
-        
-      } else{ // Load is not on boat
-
-         // Build message
-        let message = JSON.stringify({
-          Error: "No boat with this boat_id is loaded with the load with this load_id"
-        });
-
-        // Send response
-        response.sendResponse(res, message, 404);
-        return;
-      }; 
-  
+      } ;
 });
 
 
@@ -314,39 +271,43 @@ router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
  * 
  * Gets all loads for a given boat
  */
-router.get('/:boat_id/loads', async (req, res, next) => {
-
+router.get('/:boat_id/loads', checkJwt, async (req, res, next) => {
+  // Store boat_id, it changes with request
+  let boat_id_request = req.params.boat_id;
+  console.log(req.params);
   // Check if boat exist
   let boat = await boat_helper.getBoat(req, res, true);
+  // Revert boat_id to original
+  req.params.boat_id = boat_id_request;
   
   if (boat.exist) {
 
     let loads = boat.boat.loads;
+    let returnLoads = await load_helper.loadsForBoatWithId(loads, req, res);
 
-    let returnLoads = [];
+    // let returnLoads = [];
 
-    for (let index = 0; index < loads.length; index++) {
-      const element = loads[index];
+    // for (let index = 0; index < loads.length; index++) {
+    //   const element = loads[index];
 
-      // Sets req.params
-      req.params.load_id = element.id;
+    //   // Sets req.params
+    //   req.params.load_id = element.id;
 
-      // Gets load
-      let currentLoad = await load_helper.getLoad(req, res, true, false);
+    //   // Gets load
+    //   let currentLoad = await load_helper.getLoad(req, res, true, false);
 
-      // Load object to be added to list
-      let currentLoadObj = {
-        id: currentLoad.load.id, 
-        item: currentLoad.load.item, 
-        creation_date: 
-        currentLoad.load.creation_date, 
-        self: currentLoad.load.self
-      };
+    //   // Load object to be added to list
+    //   let currentLoadObj = {
+    //     id: currentLoad.load.id, 
+    //     item: currentLoad.load.item, 
+    //     creation_date: currentLoad.load.creation_date, 
+    //     self: currentLoad.load.self
+    //   };
 
-      // Adds load to return list
-      returnLoads.push(currentLoadObj);
+    //   // Adds load to return list
+    //   returnLoads.push(currentLoadObj);
       
-    };
+    // };
 
     // Error message
     let message = JSON.stringify({loads: returnLoads});
