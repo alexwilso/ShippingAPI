@@ -57,7 +57,7 @@ const boat_helper = require('../helpers/boat_helpers');
    * @param {request} req 
    * @param {response} res 
    */
-  const getAllPublicBoats = (res, owner) => {
+  const getAllOwnerPublicBoats = (res, owner) => {
 
     model.RetrieveOwners('boat', owner[0].sub, true)
       .then((result) => {
@@ -71,9 +71,30 @@ const boat_helper = require('../helpers/boat_helpers');
      .catch((err) => {console.log(err);})
   };
 
+  /**
+   * Loop through list of owners, adding id to list
+   * @param {List of owners} owners 
+   */
+  const addIdToOwners = (owners) => {
+
+      // Loop through response, add id from datastore to response
+      for (let index = 0; index < owners.length; index++) {
+        const objsymbol = Object.getOwnPropertySymbols(owners[index])
+        let owner_id =parseInt(owners[index][objsymbol[0]].id)
+        owners[index]['id'] = owner_id;
+        // Remove boats attribute
+        delete owners[index]['boats'];
+        // Rename sub attribute
+        owners[index]['owner'] = owners[index]['sub']
+        delete owners[index]['sub'];
+        };
+        
+    return owners;
+  };
 
   module.exports = {
     insertOwner,
     getOwnerBoats,
-    getAllPublicBoats
+    getAllOwnerPublicBoats,
+    addIdToOwners
   }

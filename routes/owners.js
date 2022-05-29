@@ -56,41 +56,33 @@ const checkJwt = jwt({
     ownerHelpers.insertOwner(req, res);
   });
 
-  /**
+ /**
  * Get /owners
  * 
  * Gets a list of all owners
  */
-router.get('/', checkJwt, async (req, res, next) => {
+  router.get('/', checkJwt, async (req, res, next) => {
 
-  // Returns a list of all owners
-  model.RetrieveList('owners', req)
-    .then((result) => {
-          // if owners, send response
-          if (result[0]){
-
-            // Loop through response, add id from datastore to response
-            for (let index = 0; index < result[0].length; index++) {
-                const objsymbol = Object.getOwnPropertySymbols(result[0][index])
-                let owner_id =parseInt(result[0][index][objsymbol[0]].id)
-                result[0][index]['id'] = owner_id;
-                // Remove boats attribute
-                delete result[0][index]['boats'];
-                // Rename sub attribute
-                result[0][index]['owner'] = result[0][index]['sub']
-                delete result[0][index]['sub'];
-            }
-            // Send response
-            response.sendResponse(res, result[0], 200);
-
-        } else { // no owners, send empty list
-            response.sendResponse(res, [], 200);
-        }
-    })
-    .catch((err) => {
-      next(err);
-    });
-});
+    // Returns a list of all owners
+    model.RetrieveList('owners', req)
+      .then((result) => {
+            // if owners, send response
+            if (result[0]){
+              
+              // Adds ids to owners
+              let idOwners = ownerHelpers.addIdToOwners(result[0]);
+  
+              // Send response
+              response.sendResponse(res, idOwners, 200);
+  
+          } else { // no owners, send empty list
+              response.sendResponse(res, [], 200);
+          }
+      })
+      .catch((err) => {
+        next(err);
+      });
+  });
 
 /**
  * GET /owners/:owner_id/boats
@@ -103,54 +95,20 @@ router.get('/', checkJwt, async (req, res, next) => {
 
     // If owner is accessing their boats, display all
     if (owner[0].sub == req.user.sub) {
-      // model.RetrieveBoatsByOwner('boat', req.user.sub, false)
-      // .then((result) => {
-      //   // if boats, send response
-      //   if (result[0]){
 
-      //     // Loop through response, add id from datastore to response
-      //     for (let index = 0; index < result[0].length; index++) {
-      //       const objsymbol = Object.getOwnPropertySymbols(result[0][index])
-      //       let boat_id =parseInt(result[0][index][objsymbol[0]].id)
-      //       result[0][index]['id'] = boat_id;
-      //     }
-
-      //   // send response
-      //   response.sendResponse(res, result[0], 200);
       // Get owner boats and send response to user
         ownerHelpers.getOwnerBoats(req, res);
         return;
         } 
-        else { // no boats for user, send empty list
-            // response.sendResponse(res, [], 200);
-            // return;
-            ownerHelpers.getAllPublicBoats(res, owner);
-            return;
+        else { 
+          // gets a list of all public boats for owner
+          ownerHelpers.getAllOwnerPublicBoats(res, owner);
+          return;
         }
-    // })
-    // // handle error
-    // .catch((error) => {
-    //   next(error);
-    // });
-    // non owner accessing other owners boats, only display public
-    // else{
-    //   model.RetrieveOwners('boat', owner, true)
-    //   .then((result) => {
-    //     // if boats, send response
-    //     if (result[0]){
-    //         response.sendResponse(res, result[0], 200);
-    //     } else { // no boats for user, send empty list
-    //         response.sendResponse(res, [], 200);
-    //     }
-    // })
-    // // handle error
-    // .catch((error) => {
-    //   next(error);
-    // });
-    // }
-
-    // res.send('test')
   });
+
+
+router.patch(('/:owner_id')) 
 
 /**
  * Errors on "/*" routes.

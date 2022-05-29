@@ -61,20 +61,11 @@ router.post('/', checkJwt, (req, res, next) => {
 
         // Send response
         response.sendResponse(res, message, 400);
-    }
+    };
 } catch(error) {
   console.log(error);
-
-  // Json Message
-  let errorMessage = {
-      "Error": "invalid permission..."
   };
-
-  // Send response to client
-  response.sendResponse(res, errorMessage, 401);
-}
 });
-
 
  /**
  * GET /boats/:boat_id
@@ -189,12 +180,10 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
       return;
 
     };
-    console.log(req.user.sub, load.load);
 
     // Check if correct owner
     if (load_helper.checkOwner(req.user.sub, load.load.owner) == false) {
     let message = JSON.stringify({"Error":"Only load owner can add load to boat"});
-
     response.sendResponse(res, message, 401);
     return;
     }
@@ -253,7 +242,7 @@ router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
     let load = await load_helper.getLoad(req, res, true, false);
     // Revert boat_id to original
     req.params.boat_id = boat_id_request;
-    console.log(load);
+
     // If load exist
     if (load.exist) {
     
@@ -272,7 +261,6 @@ router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
       };
   };
 
-
     // If boat and load don't exist
     if (!boat.exist || !load.exist) {
         
@@ -288,11 +276,10 @@ router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
       response.sendResponse(res, message, 404);
 
       return;
-
     };
     
     // Both boat and load exist
-    // if (exist) {
+
     // Load is on boat
       if (load.load.carrier.id == req.params.boat_id) {
          // Load to be updated
@@ -316,7 +303,6 @@ router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
 
         // Send response
         response.sendResponse(res, message, 404);
-
         return;
       }; 
   
