@@ -67,7 +67,7 @@ router.post('/', checkJwt, (req, res, next) => {
 router.get('/:load_id', checkJwt, (req, res, next) => {
   
   // Get load to send to client
-  load_helper.getLoad(req, res, false);
+  load_helper.getLoad(req, res, false, false);
 });
 
 
@@ -100,7 +100,7 @@ router.put('/load/:load_id', (req, res, next) => {
 router.delete('/:load_id', checkJwt, async (req, res, next) => {
 
    // Get load
-   let load = await load_helper.getLoad(req, res, true);
+   let load = await load_helper.getLoad(req, res, true, false);
 
    // If load exist, delete it
    if (load.exist) {

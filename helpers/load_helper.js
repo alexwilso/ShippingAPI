@@ -1,9 +1,43 @@
-const model = require('../models/model-datastore');
-const response = require('../utility/response');
 const url = require('../utility/url');
+
+// Response to client
+const response = require('../utility/response');
+
+// Datastore
 const {Datastore} = require('@google-cloud/datastore');
+const model = require('../models/model-datastore');
+
+// Helpers
 const boat_helper = require('../helpers/boat_helpers');
 
+/**
+ * Loops through list of loads, updating carrier to Null
+ * @param {list of Loads} loads 
+ */
+
+const unloadLoads = async (req, res, loads) => {
+
+  // loops through loads, unloads them
+  for(let x = 0; x < loads.length; x++){
+    // Set load id in request params
+    req.params.load_id = loads[x].id;
+
+    // Gets load
+    let load = await getLoad(req, res, true, true);
+
+    // Load to be updated
+    let newLoad = {
+      volume: load.volume, 
+      item: load.item, 
+      creation_date: load.creation_date, 
+      carrier: null,
+      owner: req.user.sub
+    };
+    // Updates load to assigned boat
+    let t = await assignLoadToBoat(newLoad, res, true, parseInt(req.params.load_id));
+  };
+  return;
+}
 
 /**
  *  Insert Load into datastore.
@@ -36,7 +70,7 @@ const insertLoad = (req, res) => {
 /**
  *  Gets load using id from datastore. Sends response
  */
- const getLoad = (req, res, check) => {
+ const getLoad = (req, res, check, unloading) => {
 
   // Set load id
   const load_id = parseInt(req.params.load_id);
@@ -50,15 +84,19 @@ const insertLoad = (req, res) => {
       // Load exist
       if (load[0]) {
         
+        // If removing load from boat
+        if (unloading) {
+          return load[0];
+        }
+        console.log(load[0])
         // If load on carrier, set carrier information
         if (load[0].carrier != null) {
           
           // Set boat id
           req.params.boat_id = load[0].carrier
 
-
           // Get boat data
-          let boat = await boat_helper.getBoat(req, res, true);
+          var boat = await boat_helper.getBoat(req, res, true);
           
           // Set carrier data
           carrier = {
@@ -117,7 +155,6 @@ const insertLoad = (req, res) => {
      };
     })
     .catch((err) => {
-      console.log(err);
       return false;
     })
 };
@@ -174,10 +211,8 @@ const assignLoadToBoat = (load, res, check, load_id) => {
 
         // Send resoponse to client
         response.sendResponse(res, message, 204);
-
-
       }
-    });
+  });
 };
 
 /**
@@ -213,5 +248,6 @@ module.exports = {
   getAllLoads,
   assignLoadToBoat,
   deleteLoad,
-  checkOwner
+  checkOwner,
+  unloadLoads
 }

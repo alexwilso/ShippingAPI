@@ -13,6 +13,7 @@ const jwksRsa = require('jwks-rsa');
 // Error handeling
 const errors = require('../errors/utility_errors');
 const ownerErrors = require('../errors/owner_errors');
+const boatErrors = require('../errors/boat_errors');
 
 // Client response
 const response = require('../utility/response');
@@ -126,56 +127,25 @@ router.get('/:boat_id', checkJwt, (req, res, next) => {
  * Deleting a boat will unload any loads that were loaded on to it.
  */
 
-router.delete('/:boat_id', async (req, res, next) => {
+router.delete('/:boat_id', checkJwt, async (req, res, next) => {
 
   // Get boat
   let boat = await boat_helper.getBoat(req, res, true);
 
-  let waiting = true;
-
   // Boat does not exist
   if (!boat.exist) {
-
-      // Build message
-      let message = JSON.stringify({
-        Error: "No boat with this boat_id exists"
-      });
-
-      // Send response
-      response.sendResponse(res, message, 404);
-
-      return
-
-
+    // Send Error message
+    boatErrors.nonexistingBoatError(res);
+    return;
   };
+  
+  // Check incorrect owner
+  if (boatErrors.wrongOwner(req.user.sub, boat.boat.owner, res)) {
+    return;
+  }
 
-  // Loads that need to be unloaded
-  let loads = boat.boat.loads;
-
-  // loops through loads, unloads them
-  for(let x = 0; x < loads.length; x++){
-    // Set load id in request params
-    req.params.load_id = loads[x].id;
-
-    // Gets load
-    let load = await load_helper.getLoad(req, res, true);
-
-    // Load to be updated
-    let newLoad = {
-      volume: load.load.volume, 
-      item: load.load.item, 
-      creation_date: load.load.creation_date, 
-      carrier: null
-    };
-
-    // Updates load to assigned boat
-    let t = await load_helper.assignLoadToBoat(newLoad, res, true, load.load.id);
-
-    // Resolve promise
-    if (x === loads.length){
-      // let t = await boat_helper.deleteBoat(boat.boat.id, res);
-    };
-  };
+  // unloads loads from boat
+  load_helper.unloadLoads(req, res, boat.boat.loads);
 
   // Delete boat and send respnse to client
   boat_helper.deleteBoat(boat.boat.id, res);
@@ -195,7 +165,7 @@ router.delete('/:boat_id', async (req, res, next) => {
     let boat = await boat_helper.getBoat(req, res, true);
      
     // Get load
-    let load = await load_helper.getLoad(req, res, true);
+    let load = await load_helper.getLoad(req, res, true, false);
 
     // Assigned load
     let unassigned = true;
@@ -219,6 +189,7 @@ router.delete('/:boat_id', async (req, res, next) => {
       return;
 
     };
+    console.log(req.user.sub, load.load);
 
     // Check if correct owner
     if (load_helper.checkOwner(req.user.sub, load.load.owner) == false) {
@@ -279,11 +250,10 @@ router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
     // Get boat
     let boat = await boat_helper.getBoat(req, res, true);
     // Get load
-    let load = await load_helper.getLoad(req, res, true);
+    let load = await load_helper.getLoad(req, res, true, false);
     // Revert boat_id to original
     req.params.boat_id = boat_id_request;
-    console.log(load.load.carrier);
-
+    console.log(load);
     // If load exist
     if (load.exist) {
     
@@ -376,7 +346,7 @@ router.get('/:boat_id/loads', async (req, res, next) => {
       req.params.load_id = element.id;
 
       // Gets load
-      let currentLoad = await load_helper.getLoad(req, res, true);
+      let currentLoad = await load_helper.getLoad(req, res, true, false);
 
       // Load object to be added to list
       let currentLoadObj = {

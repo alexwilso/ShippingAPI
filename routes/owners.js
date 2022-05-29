@@ -49,7 +49,7 @@ const checkJwt = jwt({
 
     // Check if owner already exist
     if(ownerErrors.checkExist(res, ownersList, req.body.sub)){
-      return
+      return;
     }
 
     // Add Owner
@@ -103,49 +103,51 @@ router.get('/', checkJwt, async (req, res, next) => {
 
     // If owner is accessing their boats, display all
     if (owner[0].sub == req.user.sub) {
-      model.RetrieveBoatsByOwner('boat', req.user.sub, false)
-      .then((result) => {
-        console.log(result);
-        // if boats, send response
-        if (result[0]){
+      // model.RetrieveBoatsByOwner('boat', req.user.sub, false)
+      // .then((result) => {
+      //   // if boats, send response
+      //   if (result[0]){
 
-          // Loop through response, add id from datastore to response
-          for (let index = 0; index < result[0].length; index++) {
-            const objsymbol = Object.getOwnPropertySymbols(result[0][index])
-            let boat_id =parseInt(result[0][index][objsymbol[0]].id)
-            result[0][index]['id'] = boat_id;
-          }
+      //     // Loop through response, add id from datastore to response
+      //     for (let index = 0; index < result[0].length; index++) {
+      //       const objsymbol = Object.getOwnPropertySymbols(result[0][index])
+      //       let boat_id =parseInt(result[0][index][objsymbol[0]].id)
+      //       result[0][index]['id'] = boat_id;
+      //     }
 
-        // send response
-        response.sendResponse(res, result[0], 200);
+      //   // send response
+      //   response.sendResponse(res, result[0], 200);
+      // Get owner boats and send response to user
+        ownerHelpers.getOwnerBoats(req, res);
         return;
         } 
         else { // no boats for user, send empty list
-            response.sendResponse(res, [], 200);
+            // response.sendResponse(res, [], 200);
+            // return;
+            ownerHelpers.getAllPublicBoats(res, owner);
             return;
         }
-    })
-    // handle error
-    .catch((error) => {
-      next(error);
-    });
-    }
+    // })
+    // // handle error
+    // .catch((error) => {
+    //   next(error);
+    // });
     // non owner accessing other owners boats, only display public
-    else{
-      model.RetrieveOwners('boat', owner, true)
-      .then((result) => {
-        // if boats, send response
-        if (result[0]){
-            response.sendResponse(res, result[0], 200);
-        } else { // no boats for user, send empty list
-            response.sendResponse(res, [], 200);
-        }
-    })
-    // handle error
-    .catch((error) => {
-      next(error);
-    });
-    }
+    // else{
+    //   model.RetrieveOwners('boat', owner, true)
+    //   .then((result) => {
+    //     // if boats, send response
+    //     if (result[0]){
+    //         response.sendResponse(res, result[0], 200);
+    //     } else { // no boats for user, send empty list
+    //         response.sendResponse(res, [], 200);
+    //     }
+    // })
+    // // handle error
+    // .catch((error) => {
+    //   next(error);
+    // });
+    // }
 
     // res.send('test')
   });

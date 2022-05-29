@@ -10,7 +10,6 @@ const boat_helper = require('../helpers/boat_helpers');
  const insertOwner = (req, res) => {
     // Set boats to none
     req.body.boats = [];
-
     // Insert Owner
     model.Insert('owners', req.body)
       .then((owner) => {
@@ -27,7 +26,54 @@ const boat_helper = require('../helpers/boat_helpers');
       });
   };
 
+  /**
+   * Returns a list of all boats for owner and sends response to client
+   * @param {request} req 
+   * @param {response} res 
+   */
+  const getOwnerBoats = (req, res) => {
+    model.RetrieveBoatsByOwner('boat', req.user.sub, false)
+    .then((result) => {
+      // if boats, send response
+      if (result[0]){
+
+        // Loop through response, add id from datastore to response
+        for (let index = 0; index < result[0].length; index++) {
+          const objsymbol = Object.getOwnPropertySymbols(result[0][index])
+          let boat_id =parseInt(result[0][index][objsymbol[0]].id)
+          result[0][index]['id'] = boat_id;
+        }
+      // send response
+      response.sendResponse(res, result[0], 200);
+      }
+      else { // No boats, send empty list
+        response.sendResponse(res, [], 200);
+      }
+  }).catch((err) => {console.log(err);});
+  }
+
+  /**
+   * Gets a list of all public boats for owner and returns response to client
+   * @param {request} req 
+   * @param {response} res 
+   */
+  const getAllPublicBoats = (res, owner) => {
+
+    model.RetrieveOwners('boat', owner[0].sub, true)
+      .then((result) => {
+        // if boats, send response
+        if (result[0]){
+            response.sendResponse(res, result[0], 200);
+        } else { // no boats for user, send empty list
+            response.sendResponse(res, [], 200);
+        }
+     })
+     .catch((err) => {console.log(err);})
+  };
+
 
   module.exports = {
-    insertOwner
+    insertOwner,
+    getOwnerBoats,
+    getAllPublicBoats
   }

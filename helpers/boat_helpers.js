@@ -7,6 +7,39 @@ const {Datastore} = require('@google-cloud/datastore');
 // Errors
 const boat_errors = require('../errors/boat_errors');
 
+// Helpers
+// const load_helper = require('./load_helper');
+
+
+// /**
+//  * Loops through list of loads, updating carrier to Null
+//  * @param {list of Loads} loads 
+//  */
+
+// const unloadLoads = async (req, res, loads) => {
+
+//   // loops through loads, unloads them
+//   for(let x = 0; x < loads.length; x++){
+//     // Set load id in request params
+//     req.params.load_id = loads[x].id;
+
+//     // Gets load
+//     let load = await load_helper.getLoad(req, res, true, true);
+
+//     // Load to be updated
+//     let newLoad = {
+//       volume: load.volume, 
+//       item: load.item, 
+//       creation_date: load.creation_date, 
+//       carrier: null,
+//       owner: req.user.sub
+//     };
+//     // Updates load to assigned boat
+//     let t = await load_helper.assignLoadToBoat(newLoad, res, true, parseInt(req.params.load_id));
+//   };
+//   return;
+// }
+
 /**
  *  Inserts boat into data store. Sends response
  */
@@ -97,7 +130,7 @@ const getBoat = async (req, res, check) => {
          name: boat[0].name,
          type: boat[0].type,
          length: boat[0].length,
-         owner: req.user.sub,
+         owner: boat[0].owner,
          self: url.generateUrl(req.protocol, req.get('host'), req.url, 'boats', boat_id),
          loads: boatLoads // replace with get loads
      };
