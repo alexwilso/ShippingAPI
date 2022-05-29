@@ -31,8 +31,8 @@ const boat_helper = require('../helpers/boat_helpers');
    * @param {request} req 
    * @param {response} res 
    */
-  const getOwnerBoats = (req, res) => {
-    model.RetrieveBoatsByOwner('boat', req.user.sub, false)
+  const getOwnerBoats = (req, res, check) => {
+    return model.RetrieveBoatsByOwner('boat', req.user.sub, false)
     .then((result) => {
       // if boats, send response
       if (result[0]){
@@ -43,10 +43,21 @@ const boat_helper = require('../helpers/boat_helpers');
           let boat_id =parseInt(result[0][index][objsymbol[0]].id)
           result[0][index]['id'] = boat_id;
         }
+      // return response to requester
+      if (check == false) {
+        return result[0];
+      };
+
       // send response
       response.sendResponse(res, result[0], 200);
       }
       else { // No boats, send empty list
+
+        // return response to requester
+        if (check == false) {
+          return result[0];
+        };
+
         response.sendResponse(res, [], 200);
       }
   }).catch((err) => {console.log(err);});
@@ -92,9 +103,74 @@ const boat_helper = require('../helpers/boat_helpers');
     return owners;
   };
 
+  /**
+   * Gets owner by id
+   * @param {request} req 
+   * @param {response} res 
+   */
+  const getOwnerById = (req, res) => {
+    // set owner id
+    const owner_id = parseInt(req.params.owner_id);
+
+    // Retrieve and return owner
+    return model.Retrieve('owners', owner_id)
+    .then(async (owner) => {
+      if (owner[0] == undefined) {
+        return false;
+      }
+      // Add id to owner
+      owner[0].id = owner_id;
+
+      // Get owner boats
+      owner[0].boats = await getOwnerBoats(req, res, false);
+
+      //  // Make a list of loads
+      //  let loadsList = await model.RetrieveList('load', req)
+      //  .then((loads) => {
+      //    return loads[0];
+      // });
+
+      // console.log(loadsList);
+      
+      // // Get loads for all boats
+      // owner[0]['boats'].forEach((element) => {
+      //   // list of loads on boat to be returned
+      //   let boatLoads = [];
+      // })
+
+      // // list of loads on boat to be returned
+      // let boatLoads = [];
+
+      // // Make a list of loads
+      // let loadsList = await model.RetrieveList('load', req)
+      //   .then((loads) => {
+      //     return loads[0];
+      //   });
+
+
+      // // Check if load is on boats
+      // loadsList.forEach(e => {
+      //   if (e.carrier == boat_id) {
+      //     // Set load id
+      //     let i = e[Datastore.KEY].id;
+      //     // Add load to load array
+      //     boatLoads.push({
+      //       id: i,
+      //       item: e.item,
+      //       self: url.generateUrl(req.protocol, req.get('host'), req.url, 'loads', i),
+      //     });
+      //   };
+      // });
+      
+
+      return owner[0];
+    });
+  }
+
   module.exports = {
     insertOwner,
     getOwnerBoats,
     getAllOwnerPublicBoats,
-    addIdToOwners
+    addIdToOwners,
+    getOwnerById
   }

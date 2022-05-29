@@ -217,10 +217,15 @@ const assignLoadToBoat = (load, res, check, load_id) => {
 /**
  *  Delete a load
  */
-const deleteLoad = (load_id, res) => {
+const deleteLoad = (load_id, res, check) => {
     // Delete boat
     model.Remove("load", load_id)
     .then((sunkenShip) => {
+
+      // Check do not send message
+      if(check == true){
+        return;
+      }
 
         // No content in response body
         let message = JSON.stringify({});
@@ -257,7 +262,6 @@ const loadsForBoatWithId = async (loads, req, res) => {
 
     // Gets load
     let currentLoad = await getLoad(req, res, true, false);
-    console.log(currentLoad);
 
     // Load object to be added to list
     let currentLoadObj = {

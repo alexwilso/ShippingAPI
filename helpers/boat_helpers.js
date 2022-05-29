@@ -220,14 +220,19 @@ const getAllBoats = async (req, res) => {
  * @param {integer} boat_id 
  * @param {response} res 
  */
-const deleteBoat = (boat_id, res) => {
-  
+const deleteBoat = (boat_id, res, check) => {
+  console.log(check);
   // Delete boat
   model.Remove("boat", boat_id)
     .then((sunkenShip) => {
 
         // Error message
         let message = JSON.stringify({});
+
+        // if check, do not send response
+        if (check == true) {
+          return;
+        };
 
         // Send response
         response.sendResponse(res, message, 204);    

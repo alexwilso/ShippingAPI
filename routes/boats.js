@@ -137,7 +137,7 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
   load_helper.unloadLoads(req, res, boat.boat.loads);
 
   // Delete boat and send respnse to client
-  boat_helper.deleteBoat(boat.boat.id, res);
+  boat_helper.deleteBoat(boat.boat.id, res, false);
   return;
 
 });
@@ -279,35 +279,12 @@ router.get('/:boat_id/loads', checkJwt, async (req, res, next) => {
   let boat = await boat_helper.getBoat(req, res, true);
   // Revert boat_id to original
   req.params.boat_id = boat_id_request;
+  console.log('here')
   
   if (boat.exist) {
 
     let loads = boat.boat.loads;
     let returnLoads = await load_helper.loadsForBoatWithId(loads, req, res);
-
-    // let returnLoads = [];
-
-    // for (let index = 0; index < loads.length; index++) {
-    //   const element = loads[index];
-
-    //   // Sets req.params
-    //   req.params.load_id = element.id;
-
-    //   // Gets load
-    //   let currentLoad = await load_helper.getLoad(req, res, true, false);
-
-    //   // Load object to be added to list
-    //   let currentLoadObj = {
-    //     id: currentLoad.load.id, 
-    //     item: currentLoad.load.item, 
-    //     creation_date: currentLoad.load.creation_date, 
-    //     self: currentLoad.load.self
-    //   };
-
-    //   // Adds load to return list
-    //   returnLoads.push(currentLoadObj);
-      
-    // };
 
     // Error message
     let message = JSON.stringify({loads: returnLoads});
@@ -335,6 +312,7 @@ router.get('/:boat_id/loads', checkJwt, async (req, res, next) => {
  * Errors on "/*" routes.
  */
  router.use((err, req, res, next) => {
+   console.log('error')
 
   // // Delete//Post invalid token
   // if (err.name === "UnauthorizedError" && (req.method === 'POST' || req.method === "DELETE")) {

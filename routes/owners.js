@@ -13,9 +13,13 @@ const errors = require('../errors/utility_errors');
 const ownerErrors = require('../errors/owner_errors');
 // Client Response
 const response = require('../utility/response');
+// Helpers
 const ownerHelpers = require('../helpers/owner_helpers');
+const boat_helper = require('../helpers/boat_helpers');
+const load_helper = require('../helpers/load_helper');
 // datastore model
 const model = require('../models/model-datastore');
+const {Datastore} = require('@google-cloud/datastore');
 
 
 // Checks for valid jwt
@@ -107,8 +111,74 @@ const checkJwt = jwt({
         }
   });
 
+/**
+ * DELETE /:owner_id
+ * 
+ * Deletes owner. Deletes all boats and removes loads. Deletes loads.
+ */
+router.delete('/:owner_id', checkJwt, async(req, res, next) => {
 
-router.patch(('/:owner_id')) 
+  // get owner
+  let owner = await ownerHelpers.getOwnerById(req, res);
+
+  // Owner does not exist
+  if (owner == false) {
+    // Build message and send response
+    let message = JSON.stringify({
+      Error: "The specified owner does not exist"});
+    response.sendResponse(res, message, 404);
+    return;
+  }
+
+  // Check if owner trying to delete self
+  if (owner.sub != req.user.sub) {
+    // Build message and send response
+    let message = JSON.stringify({
+      Error: "Invalid permission... Must be owner to delete"});
+    response.sendResponse(res, message, 401);
+    return;
+  };
+
+  // Make a list of loads
+  let loadsList = await model.RetrieveList('load', req)
+  .then((loads) => {
+    return loads[0];
+  });
+
+  // // Delete loads that belong to owner
+  // loadsList.forEach((el) => {
+  //   if (el.owner == req.user.sub) {
+  //     let id = parseInt(el[Datastore.KEY].id);
+  //     load_helper.deleteLoad(id, res, true);
+  //   }
+  // });
+
+  
+
+  // Loop through owners boats and delete them
+  owner['boats'].forEach(element => {
+    console.log('************');
+    console.log(element);
+
+    // Loop through list of loads, unload them on boat
+    loadsList.forEach(el => {
+      if (elment.id == el.carrier) {
+        load_helper.unloadLoads(req, res,)
+      }
+    });
+    // console.log(element);
+    // boat_helper.deleteBoat(element.id, res, true);
+    // unloads loads from boat
+    // load_helper.unloadLoads(req, res, element.loads);
+  });
+
+  // Delete Boats and unload loads
+  // Delete loads
+
+  // Delete owner
+  res.send('test');
+
+});
 
 /**
  * Errors on "/*" routes.
