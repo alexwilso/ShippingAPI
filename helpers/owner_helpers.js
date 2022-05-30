@@ -8,8 +8,10 @@ const boat_helper = require('../helpers/boat_helpers');
  *  Insert owner into datastore.
  */
  const insertOwner = (req, res) => {
-    // Set boats to none
-    req.body.boats = [];
+    // Set boats/loads to empty
+    req.body.boats = []; 
+    req.body.loads = [];
+    
     // Insert Owner
     model.Insert('owners', req.body)
       .then((owner) => {
@@ -20,7 +22,7 @@ const boat_helper = require('../helpers/boat_helpers');
         req.body['id'] = id;
 
         // Set url of request
-        req.body['self'] = url.generateUrl(req.protocol, req.get('host'), req.url, 'owners', id)
+        req.body['self'] = url.generateUrl(req.protocol, req.get('host'), req.url, 'owners', id);
 
         response.sendResponse(res, req.body, 201);
       });

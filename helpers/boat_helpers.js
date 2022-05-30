@@ -46,8 +46,9 @@ const boat_errors = require('../errors/boat_errors');
 
 const insertBoat = (req, res) => {
 
-  // Set owner of boat (sub of id token)
+  // Set owner of boat (sub of id token) and loads
   req.body.owner = req.user.sub;
+  req.body['loads'] = [];
 
   // Insert boat into datastore
   return model.Insert('boat', req.body)
@@ -64,9 +65,6 @@ const insertBoat = (req, res) => {
 
       // Set owner of boat (sub of id token)
       req.body.owner = req.user.sub;
-
-      // Need to get loads
-      req.body['loads'] = [];
 
       // Send response
       response.sendResponse(res, req.body, 201);

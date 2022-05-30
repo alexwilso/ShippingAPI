@@ -97,6 +97,16 @@ const checkJwt = jwt({
   router.get('/:owner_id/boats', checkJwt, async (req, res, next) => {
     // Set owner 
     let owner = await model.Retrieve('owners', parseInt(req.params.owner_id), req);
+    console.log(owner);
+
+    // owner does not exist
+    if (owner == false) {
+    // Build message and send response
+      let message = JSON.stringify({
+      Error: "The specified owner does not exist"});
+      response.sendResponse(res, message, 404);
+      return;
+      };
 
     // If owner is accessing their boats, display all
     if (owner[0].sub == req.user.sub) {
@@ -119,9 +129,17 @@ const checkJwt = jwt({
  * List all the loads for owner
  */
 router.get('/:owner_id/loads', checkJwt, async (req, res, next) => {
-    // Set owner 
-  // get owner
-  let owner = await ownerHelpers.getOwnerById(req, res);
+    // get owner
+    let owner = await ownerHelpers.getOwnerById(req, res);
+
+    // owner does not exist
+    if (owner == false) {
+      // Build message and send response
+      let message = JSON.stringify({
+      Error: "The specified owner does not exist"});
+      response.sendResponse(res, message, 404);
+      return;
+    };
 
     // Make a list of loads
     let loadsList = await model.RetrieveList('load', req)
@@ -148,7 +166,7 @@ router.delete('/:owner_id', checkJwt, async(req, res, next) => {
 
   // get owner
   let owner = await ownerHelpers.getOwnerById(req, res);
-
+  
   // Owner does not exist
   if (owner == false) {
     // Build message and send response

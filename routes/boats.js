@@ -274,12 +274,10 @@ router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
 router.get('/:boat_id/loads', checkJwt, async (req, res, next) => {
   // Store boat_id, it changes with request
   let boat_id_request = req.params.boat_id;
-  console.log(req.params);
   // Check if boat exist
   let boat = await boat_helper.getBoat(req, res, true);
   // Revert boat_id to original
   req.params.boat_id = boat_id_request;
-  console.log('here')
   
   if (boat.exist) {
 

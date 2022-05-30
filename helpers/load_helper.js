@@ -239,9 +239,11 @@ const deleteLoad = (load_id, res, check) => {
 
 /**
  * Check load owner
+ * @param {client making request} requester 
+ * @param {load owner} owner 
+ * @returns 
  */
 const checkOwner = (requester, owner) => {
-  console.log(requester, owner);
   if (requester !== owner) {
     return false;
   }
