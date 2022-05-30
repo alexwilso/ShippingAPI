@@ -104,6 +104,18 @@ const boat_helper = require('../helpers/boat_helpers');
   };
 
   /**
+   * Delete owner
+   * @param {request} req 
+   * @param {response} res 
+   */
+  const deleteOwner = (req, res) => {
+    model.Remove('owners', parseInt(req.params.owner_id)) 
+      .then((owner) => {
+        return;
+      });
+  }
+
+  /**
    * Gets owner by id
    * @param {request} req 
    * @param {response} res 
@@ -172,5 +184,6 @@ const boat_helper = require('../helpers/boat_helpers');
     getOwnerBoats,
     getAllOwnerPublicBoats,
     addIdToOwners,
-    getOwnerById
+    getOwnerById,
+    deleteOwner
   }

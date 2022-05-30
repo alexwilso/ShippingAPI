@@ -20,6 +20,7 @@ const load_helper = require('../helpers/load_helper');
 // datastore model
 const model = require('../models/model-datastore');
 const {Datastore} = require('@google-cloud/datastore');
+const { load } = require('@grpc/grpc-js');
 
 
 // Checks for valid jwt
@@ -153,30 +154,52 @@ router.delete('/:owner_id', checkJwt, async(req, res, next) => {
   //   }
   // });
 
+  // for (let x = 0; x < owner['boats'].length; x++) {
+  //   const element = owner['boats'][x];
+
+  //   for (let y = 0; y < loadsList.length; y++) {
+  //     const el = loadsList[y];
+
+  //     if (elment.id == el.carrier) {
+  //       load_helper.unloadLoads(req, res,)
+  //     };
+
+  //     console.log(element);
+  //   };    
+  // };
   
 
   // Loop through owners boats and delete them
   owner['boats'].forEach(element => {
-    console.log('************');
-    console.log(element);
 
-    // Loop through list of loads, unload them on boat
+    // Loop through list of loads
     loadsList.forEach(el => {
-      if (elment.id == el.carrier) {
-        load_helper.unloadLoads(req, res,)
+      const loadId = parseInt(el[Datastore.KEY].id);
+      // Unload loads on owners boats
+      if (element.id == el.carrier) {
+        let unload = {
+          volume: el.volume, 
+          item: el.item, 
+          creation_date: el.creation_date, 
+          carrier: null,
+          owner: el.owner
+        };
+        load_helper.assignLoadToBoat(unload, res, true, loadId);
+      };
+
+      // Delete loads that belong to owner
+      if (owner.sub == el.owner) {
+        load_helper.deleteLoad(loadId, res, true);
       }
     });
-    // console.log(element);
-    // boat_helper.deleteBoat(element.id, res, true);
-    // unloads loads from boat
-    // load_helper.unloadLoads(req, res, element.loads);
+    // Delete boat
+    boat_helper.deleteBoat(element.id, res, true);
   });
 
-  // Delete Boats and unload loads
-  // Delete loads
-
+  // ownerHelpers.deleteOwner(req, res);
   // Delete owner
   res.send('test');
+  return;
 
 });
 

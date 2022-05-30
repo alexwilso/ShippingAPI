@@ -221,7 +221,6 @@ const getAllBoats = async (req, res) => {
  * @param {response} res 
  */
 const deleteBoat = (boat_id, res, check) => {
-  console.log(check);
   // Delete boat
   model.Remove("boat", boat_id)
     .then((sunkenShip) => {
