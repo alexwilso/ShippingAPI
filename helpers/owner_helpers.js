@@ -82,6 +82,10 @@ const boat_helper = require('../helpers/boat_helpers');
      .catch((err) => {console.log(err);})
   };
 
+  const getAllOwnerLoads = (res, owner) => {
+    model.re
+  }
+
   /**
    * Loop through list of owners, adding id to list
    * @param {List of owners} owners 

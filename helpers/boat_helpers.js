@@ -235,7 +235,7 @@ const deleteBoat = (boat_id, res, check) => {
 
         // Send response
         response.sendResponse(res, message, 204);    
-    })
+    }).catch(err => {console.log(err);});
 };
 
 /**

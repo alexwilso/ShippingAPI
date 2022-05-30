@@ -211,7 +211,8 @@ const assignLoadToBoat = (load, res, check, load_id) => {
         // Send resoponse to client
         response.sendResponse(res, message, 204);
       }
-  });
+  })
+  .catch(err => {console.log(err)});
 };
 
 /**
@@ -233,6 +234,7 @@ const deleteLoad = (load_id, res, check) => {
         // Send response
         response.sendResponse(res, message, 204);    
     })
+    .catch(err =>{console.log(err);});
 };
 
 /**

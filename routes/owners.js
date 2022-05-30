@@ -112,6 +112,33 @@ const checkJwt = jwt({
         }
   });
 
+
+/**
+ * GET /owner/:owner_id/loads
+ * 
+ * List all the loads for owner
+ */
+router.get('/:owner_id/loads', checkJwt, async (req, res, next) => {
+    // Set owner 
+  // get owner
+  let owner = await ownerHelpers.getOwnerById(req, res);
+
+    // Make a list of loads
+    let loadsList = await model.RetrieveList('load', req)
+    .then((loads) => {
+    return loads[0];
+    });
+
+    let ownerLoads = [];
+    loadsList.forEach(el => {
+      // Add all ownerLoads to return list
+      if (owner.sub == el.owner) {
+        ownerLoads.push(el);
+      };
+    });
+
+    response.sendResponse(res, ownerLoads, 200);
+});
 /**
  * DELETE /:owner_id
  * 
@@ -146,35 +173,19 @@ router.delete('/:owner_id', checkJwt, async(req, res, next) => {
     return loads[0];
   });
 
-  // // Delete loads that belong to owner
-  // loadsList.forEach((el) => {
-  //   if (el.owner == req.user.sub) {
-  //     let id = parseInt(el[Datastore.KEY].id);
-  //     load_helper.deleteLoad(id, res, true);
-  //   }
-  // });
-
-  // for (let x = 0; x < owner['boats'].length; x++) {
-  //   const element = owner['boats'][x];
-
-  //   for (let y = 0; y < loadsList.length; y++) {
-  //     const el = loadsList[y];
-
-  //     if (elment.id == el.carrier) {
-  //       load_helper.unloadLoads(req, res,)
-  //     };
-
-  //     console.log(element);
-  //   };    
-  // };
-  
-
   // Loop through owners boats and delete them
   owner['boats'].forEach(element => {
 
     // Loop through list of loads
-    loadsList.forEach(el => {
+    loadsList.forEach(async (el) => {
       const loadId = parseInt(el[Datastore.KEY].id);
+
+      // Delete loads that belong to owner
+      if (owner.sub == el.owner) {
+        el.carrier = null; // change carrier, so update doen't fire
+        load_helper.deleteLoad(loadId, res, true);
+      };
+
       // Unload loads on owners boats
       if (element.id == el.carrier) {
         let unload = {
@@ -184,21 +195,16 @@ router.delete('/:owner_id', checkJwt, async(req, res, next) => {
           carrier: null,
           owner: el.owner
         };
-        load_helper.assignLoadToBoat(unload, res, true, loadId);
+      load_helper.assignLoadToBoat(unload, res, true, loadId);
       };
-
-      // Delete loads that belong to owner
-      if (owner.sub == el.owner) {
-        load_helper.deleteLoad(loadId, res, true);
-      }
     });
     // Delete boat
     boat_helper.deleteBoat(element.id, res, true);
   });
 
-  // ownerHelpers.deleteOwner(req, res);
-  // Delete owner
-  res.send('test');
+  // Delete owner and send response to client
+  ownerHelpers.deleteOwner(req, res);
+  res.status(204).send(JSON.stringify({}));
   return;
 
 });
