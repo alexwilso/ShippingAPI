@@ -15,16 +15,18 @@ const boat_helper = require('../helpers/boat_helpers');
     // Insert Owner
     model.Insert('owners', req.body)
       .then((owner) => {
-        // Set id of added load
-        let id = owner[0].mutationResults[0].key.path[0].id;
-        
-        // Set id in req.body
-        req.body['id'] = id;
 
-        // Set url of request
-        req.body['self'] = url.generateUrl(req.protocol, req.get('host'), req.url, 'owners', id);
+      // Set id of added load
+      let id = owner[0].mutationResults[0].key.path[0].id;
+      
+      // Set id in req.body
+      req.body['id'] = id;
 
-        response.sendResponse(res, req.body, 201);
+      // Set url of request
+      req.body['self'] = url.generateUrl(req.protocol, req.get('host'), req.url, 'owners', id);
+
+      response.sendResponse(res, req.body, 201);
+      
       });
   };
 
@@ -84,10 +86,6 @@ const boat_helper = require('../helpers/boat_helpers');
      .catch((err) => {console.log(err);})
   };
 
-  const getAllOwnerLoads = (res, owner) => {
-    model.re
-  }
-
   /**
    * Loop through list of owners, adding id to list
    * @param {List of owners} owners 
@@ -141,45 +139,6 @@ const boat_helper = require('../helpers/boat_helpers');
 
       // Get owner boats
       owner[0].boats = await getOwnerBoats(req, res, false);
-
-      //  // Make a list of loads
-      //  let loadsList = await model.RetrieveList('load', req)
-      //  .then((loads) => {
-      //    return loads[0];
-      // });
-
-      // console.log(loadsList);
-      
-      // // Get loads for all boats
-      // owner[0]['boats'].forEach((element) => {
-      //   // list of loads on boat to be returned
-      //   let boatLoads = [];
-      // })
-
-      // // list of loads on boat to be returned
-      // let boatLoads = [];
-
-      // // Make a list of loads
-      // let loadsList = await model.RetrieveList('load', req)
-      //   .then((loads) => {
-      //     return loads[0];
-      //   });
-
-
-      // // Check if load is on boats
-      // loadsList.forEach(e => {
-      //   if (e.carrier == boat_id) {
-      //     // Set load id
-      //     let i = e[Datastore.KEY].id;
-      //     // Add load to load array
-      //     boatLoads.push({
-      //       id: i,
-      //       item: e.item,
-      //       self: url.generateUrl(req.protocol, req.get('host'), req.url, 'loads', i),
-      //     });
-      //   };
-      // });
-      
 
       return owner[0];
     });

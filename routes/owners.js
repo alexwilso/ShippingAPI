@@ -97,7 +97,6 @@ const checkJwt = jwt({
   router.get('/:owner_id/boats', checkJwt, async (req, res, next) => {
     // Set owner 
     let owner = await model.Retrieve('owners', parseInt(req.params.owner_id), req);
-    console.log(owner);
 
     // owner does not exist
     if (owner == false) {

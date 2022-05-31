@@ -310,7 +310,7 @@ router.get('/:boat_id/loads', checkJwt, async (req, res, next) => {
  * Errors on "/*" routes.
  */
  router.use((err, req, res, next) => {
-   console.log('error')
+   console.log(err.name)
 
   // // Delete//Post invalid token
   // if (err.name === "UnauthorizedError" && (req.method === 'POST' || req.method === "DELETE")) {

@@ -32,3 +32,7 @@ a:link, a:visited {
   text-decoration: none;
   display: inline-block;
 }
+
+body { 
+    background: #659DBD; 
+  }
