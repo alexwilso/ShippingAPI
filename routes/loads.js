@@ -19,7 +19,6 @@ const response = require('../utility/response');
 const load_helper = require('../helpers/load_helper');
 const owner_errors = require('../errors/owner_errors');
 const boat_errors = require('../errors/boat_errors');
-const { json } = require('body-parser');
 
 // Checks for valid jwt
 const checkJwt = jwt({
@@ -84,12 +83,52 @@ router.get('/', checkJwt, (req, res, next) => {
 });
 
 /**
- * Put /loads/:/load_id
+ * Patch /loads/:/load_id
  * 
  * Edit a load
  */
-router.put('/load/:load_id', (req, res, next) => {
+router.patch('/:load_id', checkJwt, async (req, res, next) => {
 
+  // Get load
+  let load = await load_helper.getLoad(req, res, true, false);
+
+  // Load does not exist
+  if (load == false) {
+     // Build message and send response
+     let message = JSON.stringify({
+      Error: "The specified load does not exist"});
+    response.sendResponse(res, message, 404);
+    return;
+  };
+
+  // Set loat
+  load = load.load;
+
+  // Check if correct owner
+  if (load_helper.checkOwner(req.user.sub, load.owner) == false) {
+    let message = JSON.stringify({"Error":"Only owner can update load"});
+
+    response.sendResponse(res, message, 401);
+    return;
+  };
+
+
+  for (const key in req.body) {
+    load[key] = req.body[key];
+  };
+  // Load to be updated
+  let newLoad = {
+    volume: load.volume, 
+    item: load.item, 
+    creation_date: load.creation_date, 
+    carrier: load.carrierid,
+    owner: req.user.sub
+  };
+  // Updates load to assigned boat
+  let t = await load_helper.assignLoadToBoat(newLoad, res, true, parseInt(req.params.load_id));
+
+  // Send response to user
+  response.sendResponse(res, load, 200)
 });
 
   /**

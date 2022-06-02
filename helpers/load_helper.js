@@ -166,7 +166,7 @@ const getAllLoads = (req, res) => {
   // Get all loads
   model.Retrieve('load', null, req)
     .then((load) =>{
-      
+      console.log(load);
       // Add boat to return message
       formattedLoads = {
         loads: load[0]

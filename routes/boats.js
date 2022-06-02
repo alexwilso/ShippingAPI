@@ -21,6 +21,7 @@ const response = require('../utility/response');
 // helpers
 const boat_helper = require('../helpers/boat_helpers');
 const load_helper = require('../helpers/load_helper');
+const url = require('../utility/url');
 
 // datastore model
 const model = require('../models/model-datastore');
@@ -84,18 +85,49 @@ router.get('/:boat_id', checkJwt, (req, res, next) => {
  *
  * List all the boats
  */
-  router.get('/', checkJwt, (req, res, next) => {
+  router.get('/', checkJwt, async (req, res, next) => {
     try {
         model.RetrieveList('boat', null, req.user.sub)
-        .then((result) => {
+        .then(async (result) => {
             // if boats, send response
             if (result[0]){
 
-                // Add id to boats
-                let boatsId = boat_helper.addIdToBoats(result[0]);
+              // Add id to boats
+              let boatsId = boat_helper.addIdToBoats(result[0]);
 
-                // Send response
-                response.sendResponse(res, boatsId, 200);
+                // Load list
+              // Make a list of loads
+              let loadsList = await model.RetrieveList('load', req)
+              .then((loads) => {
+              return loads[0];
+              });
+              // Add id to loads
+              loadsList = boat_helper.addIdToBoats(loadsList);
+
+              // remove private boats from return
+              result[0].forEach((el, i) => {
+
+                el.self = url.generateUrl(req.protocol, req.get('host'), req.url, 'boats', el.id);
+
+                // if boat is private remove it
+                if (el.owner != req.user.sub) {
+                  if (el.public == "false") {
+                    result[0].splice(i, 1);
+                  }; 
+                }
+
+                // add loads to return list
+                loadsList.forEach(e => {
+                
+                  // if loaded, add to return
+                  if (e.carrier == el.id) {
+                    e.self = url.generateUrl(req.protocol, req.get('host'), req.url, 'loads', e.id);
+                    el.loads.push(e);
+                  }
+                });
+              });
+              // Send response
+              response.sendResponse(res, boatsId, 200);
 
             } else { // no boats for user, send empty list
                 response.sendResponse(res, [], 200);
@@ -156,6 +188,15 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
       let load = await load_helper.getLoad(req, res, true, false);
       // Revert boat_id to original
       req.params.boat_id = boat_id_request;
+
+      // if boat is private
+      if (boat == "private") {
+        let message = JSON.stringify({
+          Error: "Private boat, only owner can assign load to this boat"
+        });
+        response.sendResponse(res, message, 401);
+        return;
+      }
 
 
       // If boat and load don't exist
@@ -310,14 +351,6 @@ router.get('/:boat_id/loads', checkJwt, async (req, res, next) => {
  * Errors on "/*" routes.
  */
  router.use((err, req, res, next) => {
-   console.log(err.name)
-
-  // // Delete//Post invalid token
-  // if (err.name === "UnauthorizedError" && (req.method === 'POST' || req.method === "DELETE")) {
-  //   // Send error to client
-  //   ownerErrors.postError(res);
-  //   return;
-  // }
 
   // Get invalid Token
   if (err.name === "UnauthorizedError" && req.method === 'GET') {

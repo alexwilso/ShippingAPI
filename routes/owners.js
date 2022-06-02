@@ -130,6 +130,7 @@ const checkJwt = jwt({
 router.get('/:owner_id/loads', checkJwt, async (req, res, next) => {
     // get owner
     let owner = await ownerHelpers.getOwnerById(req, res);
+    
 
     // owner does not exist
     if (owner == false) {

@@ -29,17 +29,17 @@ const Insert = (key, value) => {
  * @param id int of item id in datastore
  */
 const Retrieve = async (key, id, req) => {
+query = datastore.createQuery(['__Stat_Total__'])
   // Getting list of all entities
   if (id == null) {
 
     // Set limit
     var query = datastore.createQuery(key).limit(5);
-    console.log(req.query);
 
     // If cursor in parameter
     if (Object.keys(req.query).includes('cursor')){
       // Remove / from cursor
-      let cursor = (req.query.cursor).substring(1);;
+      let cursor = (req.query.cursor).substring(1);
 
       // set query start
       query = await query.start(cursor);

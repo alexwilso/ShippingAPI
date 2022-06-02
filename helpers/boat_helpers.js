@@ -95,6 +95,10 @@ const getBoat = async (req, res, check) => {
       // Private boat and incorrect owner, send error
       let ownerRequest = boat[0]['owner'] == req.user.sub
       if(boat[0]['public'] == 'false' && ownerRequest == false){
+        // Check, boat is not public
+        if (check) {
+          return "private";
+        }
         boat_errors.privateBoat(res);
         return;
       }
@@ -131,6 +135,7 @@ const getBoat = async (req, res, check) => {
          type: boat[0].type,
          length: boat[0].length,
          owner: boat[0].owner,
+         public: boat[0].public,
          self: url.generateUrl(req.protocol, req.get('host'), req.url, 'boats', boat_id),
          loads: boatLoads // replace with get loads
      };
