@@ -40,10 +40,68 @@ const checkJwt = jwt({
 });
 
 /**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Boats:
+ *       type: object
+ *       required:
+ *         - name
+ *         - type
+ *         - length
+ *         - public
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: The auto-generated id of the boat
+ *         name:
+ *           type: string
+ *           description: The name of the boat
+ *         length:
+ *           type: integer
+ *           description: The length of the boat
+ *         owner:
+ *           type: string
+ *           description: The id of the owner of the boat
+ *         loads:
+ *           type: array
+ *           decription: A list of loads loaded on the boat
+ *         public:
+ *            type: string
+ *            description: If the boat is public or private.
+ *         self:
+ *            type: string
+ *            description: A link to the object
+ *       example:
+ *         id: d5fE_asz
+ *         title: The New Turing Omnibus
+ *         author: Alexander K. Dewdney
+ */
+
+
+/**
  * POST /boats
  *
  * Allows you to create a new boat
+ * 
 */
+/**
+ * @swagger
+ * /boats:
+ *   post:
+ *     summary: Adds a boat to the database
+ *     tags: [Boats]
+ *     responses:
+ *       200:
+ *         description: 201
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               items:
+ *                 example:
+ *                    id: 10
+ */
 router.post('/', checkJwt, (req, res, next) => {
   
   try {
