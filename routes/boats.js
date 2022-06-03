@@ -40,68 +40,11 @@ const checkJwt = jwt({
 });
 
 /**
- * @swagger
- * components:
- *   schemas:
- *     Boats:
- *       type: object
- *       required:
- *         - name
- *         - type
- *         - length
- *         - public
- *       properties:
- *         id:
- *           type: string
- *           description: The auto-generated id of the boat
- *         name:
- *           type: string
- *           description: The name of the boat
- *         length:
- *           type: integer
- *           description: The length of the boat
- *         owner:
- *           type: string
- *           description: The id of the owner of the boat
- *         loads:
- *           type: array
- *           decription: A list of loads loaded on the boat
- *         public:
- *            type: string
- *            description: If the boat is public or private.
- *         self:
- *            type: string
- *            description: A link to the object
- *       example:
- *         id: d5fE_asz
- *         title: The New Turing Omnibus
- *         author: Alexander K. Dewdney
- */
-
-
-/**
  * POST /boats
  *
  * Allows you to create a new boat
  * 
 */
-/**
- * @swagger
- * /boats:
- *   post:
- *     summary: Adds a boat to the database
- *     tags: [Boats]
- *     responses:
- *       200:
- *         description: 201
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               items:
- *                 example:
- *                    id: 10
- */
 router.post('/', checkJwt, (req, res, next) => {
   
   try {
@@ -173,20 +116,11 @@ router.get('/:boat_id', checkJwt, (req, res, next) => {
                     result[0].splice(i, 1);
                   }; 
                 }
-
-                // add loads to return list
-                loadsList.forEach(e => {
-                
-                  // if loaded, add to return
-                  if (e.carrier == el.id) {
-                    e.self = url.generateUrl(req.protocol, req.get('host'), req.url, 'loads', e.id);
-                    el.loads.push(e);
-                  }
-                });
+                // Adds loads to boat
+                el.loads = boat_helper.addLoadToBoat(loadsList, el.id, req)
               });
               // Send response
               response.sendResponse(res, boatsId, 200);
-
             } else { // no boats for user, send empty list
                 response.sendResponse(res, [], 200);
             }
@@ -416,19 +350,33 @@ router.get('/:boat_id/loads', checkJwt, async (req, res, next) => {
       // Display all boats with public
       try {
           model.RetrieveList('boat', null)
-          .then((result) => {
+          .then(async (result) => {
               // if boats, send response
               if (result[0]){
 
+                // Make a list of loads
+                let loadsList = await model.RetrieveList('load', req)
+                .then((loads) => {
+                return loads[0];
+                });
+
+                // Add id to boats
+                let boatsId = boat_helper.addIdToBoats(result[0]);
+
                   // Loop through response, add id from datastore to response
                   for (let index = 0; index < result[0].length; index++) {
-                      const objsymbol = Object.getOwnPropertySymbols(result[0][index])
-                      let boat_id =parseInt(result[0][index][objsymbol[0]].id)
-                      result[0][index]['id'] = boat_id;
-                  }
+                    // If boat is not public, remove it
+                    if (result[0][index].public == 'false') {
+                      result[0].splice(index, 1); // Remove if not public
+                    } else {
+                        
+                    // Adds loads to boat
+                    result[0][index]['loads'] = boat_helper.addLoadToBoat(loadsList, result[0][index].id, req)
+                    };
+                  };
 
                   // Send response
-                  response.sendResponse(res, result[0], 200);
+                  response.sendResponse(res, boatsId, 200);
                   return;
               } else { // no boats for user, send empty list
 

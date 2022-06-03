@@ -10,36 +10,6 @@ const boat_errors = require('../errors/boat_errors');
 // Helpers
 // const load_helper = require('./load_helper');
 
-
-// /**
-//  * Loops through list of loads, updating carrier to Null
-//  * @param {list of Loads} loads 
-//  */
-
-// const unloadLoads = async (req, res, loads) => {
-
-//   // loops through loads, unloads them
-//   for(let x = 0; x < loads.length; x++){
-//     // Set load id in request params
-//     req.params.load_id = loads[x].id;
-
-//     // Gets load
-//     let load = await load_helper.getLoad(req, res, true, true);
-
-//     // Load to be updated
-//     let newLoad = {
-//       volume: load.volume, 
-//       item: load.item, 
-//       creation_date: load.creation_date, 
-//       carrier: null,
-//       owner: req.user.sub
-//     };
-//     // Updates load to assigned boat
-//     let t = await load_helper.assignLoadToBoat(newLoad, res, true, parseInt(req.params.load_id));
-//   };
-//   return;
-// }
-
 /**
  *  Inserts boat into data store. Sends response
  */
@@ -254,15 +224,31 @@ const addIdToBoats = (boats) => {
       boats[index]['id'] = boat_id;
   }
   return boats;
+};
 
-  // // Send response
-  // response.sendResponse(res, result[0], 200);
-}
+/**
+ * 
+ * @param {list of loads} loads 
+ * @param {id of boat} boat_id
+ */
+const addLoadToBoat = (loads, boat_id, req) => {
+  let l = [];
+    // Loops through load list addding loads to boat
+    loads.forEach(e => {
+      // if loaded, add to return
+      if (e.carrier == boat_id) {
+        e.self = url.generateUrl(req.protocol, req.get('host'), req.url, 'loads', e.id);
+        l.push(e);
+      }
+    });
+    return l;
+};
 
 module.exports = {
   insertBoat,
   getBoat,
   getAllBoats,
   deleteBoat,
-  addIdToBoats
+  addIdToBoats,
+  addLoadToBoat
 }

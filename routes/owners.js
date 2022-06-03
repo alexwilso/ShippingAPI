@@ -251,8 +251,8 @@ router.use((err, req, res, next) => {
           const objsymbol = Object.getOwnPropertySymbols(result[0][index])
           let boat_id =parseInt(result[0][index][objsymbol[0]].id)
           result[0][index]['id'] = boat_id;
-        }
-
+        };
+        
           response.sendResponse(res, result[0], 200);
       } else { // no boats for user, send empty list
           response.sendResponse(res, [], 200);

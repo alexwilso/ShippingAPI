@@ -5,10 +5,6 @@ const helpers = require("./public/helpers/helperObj.js").obj; // helper function
 const express = require('express');
 const { auth, requiresAuth } = require('express-openid-connect');
 const app = express();
-// swagger
-const swaggerUI = require("swagger-ui-express");
-const swaggerJsDoc = require("swagger-jsdoc");
-
 
  // Set up handlebars
  let handlebars = require("express-handlebars").create({
@@ -28,29 +24,6 @@ app.use(express.static('public'));
 const boats = require('./routes/boats');
 const loads = require('./routes/loads');
 const owners = require('./routes/owners')
-
-
-// Extended: https://swagger.io/specification/#infoObject
-const options = {
-	definition: {
-		openapi: "3.0.0",
-		info: {
-			title: "Shipping API",
-			version: "1.0.0",
-			description: "A simple Express Shipping API",
-		},
-		servers: [
-			{
-				url: "http://localhost:4000",
-			},
-		],
-	},
-	apis: ["./routes/*.js"],
-};
-
-const specs = swaggerJsDoc(options);
-
-app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(specs));
 
 const config = {
   authRequired: false,
