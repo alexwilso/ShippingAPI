@@ -90,10 +90,15 @@ class errors {
     }
   };
 
-  // createHangUpError() {
-  //   var error = new Error('socket hang up');
-  //   error.code = 'ECONNRESET';
-  //   return error;
-  // }
+  /*
+  * Checks request header for accepts application/json data
+  */
+  jsonAccepts(req){
+
+    if (req.headers.accept == "application/json" || req.headers.accept == '*/*') {
+      return true;
+    }
+    return false;
+  };
 
 } module.exports = new errors();

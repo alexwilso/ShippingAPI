@@ -14,6 +14,7 @@ const jwksRsa = require('jwks-rsa');
 const errors = require('../errors/utility_errors');
 const ownerErrors = require('../errors/owner_errors');
 const boatErrors = require('../errors/boat_errors');
+const utility_errors = require('../errors/utility_errors');
 
 // Client response
 const response = require('../utility/response');
@@ -46,6 +47,12 @@ const checkJwt = jwt({
  * 
 */
 router.post('/', checkJwt, (req, res, next) => {
+
+  // Check accepts
+  if (utility_errors.jsonAccepts(req) == false) {
+    response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+    return;
+  }
 
   // Unacceptable content
   if (req.headers['content-type'] == 'text/html') {
@@ -80,6 +87,12 @@ router.post('/', checkJwt, (req, res, next) => {
  */
 router.get('/:boat_id', checkJwt, (req, res, next) => {
 
+  // Check accepts
+  if (utility_errors.jsonAccepts(req) == false) {
+    response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+    return;
+  }
+
   // Get boat to send to client
   boat_helper.getBoat(req, res, false);
 
@@ -91,6 +104,13 @@ router.get('/:boat_id', checkJwt, (req, res, next) => {
  * List all the boats
  */
   router.get('/', checkJwt, async (req, res, next) => {
+
+    // Check accepts
+    if (utility_errors.jsonAccepts(req) == false) {
+      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+      return;
+    };
+
     try {
         model.RetrieveList('boat', null, req.user.sub)
         .then(async (result) => {
@@ -175,9 +195,16 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
    * Updating boat using patch
    */
   router.patch('/:boat_id', checkJwt, (req, res, next) => {
+
+    // Check accepts
+    if (utility_errors.jsonAccepts(req) == false) {
+      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+      return;
+    };
+
     // method not supported
     response.sendResponse(res, {}, 405)
-    return;                                                                                                                                   
+    return;                                                                                                                                  
   });
 
   /**
@@ -186,6 +213,13 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
  * Assigns load to a boat. Load must not be already assigned.
  */
   router.put('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
+
+     // Check accepts
+    if (utility_errors.jsonAccepts(req) == false) {
+      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+      return;
+    };
+
     // Store boat_id, it changes with request
     let boat_id_request = req.params.boat_id; 
     // Get boat/load
@@ -296,6 +330,13 @@ router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
  * Gets all loads for a given boat
  */
 router.get('/:boat_id/loads', checkJwt, async (req, res, next) => {
+
+  // Check accepts
+  if (utility_errors.jsonAccepts(req) == false) {
+    response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+    return;
+  };
+
   // Store boat_id, it changes with request
   let boat_id_request = req.params.boat_id;
   // Check if boat exist

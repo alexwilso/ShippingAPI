@@ -19,6 +19,7 @@ const response = require('../utility/response');
 const load_helper = require('../helpers/load_helper');
 const owner_errors = require('../errors/owner_errors');
 const boat_errors = require('../errors/boat_errors');
+const utility_errors = require('../errors/utility_errors');
 
 // Checks for valid jwt
 const checkJwt = jwt({
@@ -39,6 +40,12 @@ const checkJwt = jwt({
  * Allows you to create a new load.
  */
 router.post('/', checkJwt, (req, res, next) => {
+
+  // Check accepts
+  if (utility_errors.jsonAccepts(req) == false) {
+    response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+    return;
+  };
 
   // Check for missing attributes
   if (errors.checkLoad(req.body)) {
@@ -62,6 +69,12 @@ router.post('/', checkJwt, (req, res, next) => {
 * Allows you to get an existing slip.
 */
 router.get('/:load_id', checkJwt, (req, res, next) => {
+
+  // Check accepts
+  if (utility_errors.jsonAccepts(req) == false) {
+    response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+    return;
+  };
   
   // Get load to send to client
   load_helper.getLoad(req, res, false, false);
@@ -84,6 +97,12 @@ router.get('/', checkJwt, (req, res, next) => {
 * Edit a load
 */
 router.patch('/:load_id', checkJwt, async (req, res, next) => {
+
+  // Check accepts
+  if (utility_errors.jsonAccepts(req) == false) {
+    response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+    return;
+  };
 
   // Get load
   let load = await load_helper.getLoad(req, res, true, false);

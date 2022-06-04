@@ -17,9 +17,11 @@ const response = require('../utility/response');
 const ownerHelpers = require('../helpers/owner_helpers');
 const boat_helper = require('../helpers/boat_helpers');
 const load_helper = require('../helpers/load_helper');
+const utility_errors = require('../errors/utility_errors');
 // datastore model
 const model = require('../models/model-datastore');
 const {Datastore} = require('@google-cloud/datastore');
+const url = require('../utility/url');
 
 
 // Checks for valid jwt
@@ -32,8 +34,11 @@ const checkJwt = jwt({
     }),
     // Validate the audience and the issuer.
     issuer: `https://${process.env.DOMAIN}/`,
-    algorithms: ['RS256']
+    algorithms: ['RS256'],
+
   });
+  // https://wilsoal9-493.us.auth0.com/.well-known/jwks.json//api/v2/users
+
 
   /**
    * Post /owners
@@ -41,6 +46,13 @@ const checkJwt = jwt({
    * Create a new owner
    */
   router.post('/', checkJwt, async (req, res, err) => {
+
+    // Check accepts
+    if (utility_errors.jsonAccepts(req) == false) {
+      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+      return;
+    };
+
     // Add email and sub to body
     req.body.email = req.user.name;
     req.body.sub = req.user.sub;
@@ -60,12 +72,66 @@ const checkJwt = jwt({
     ownerHelpers.insertOwner(req, res);
   });
 
+
+/**
+ * Get /owners/owner_id
+ * 
+ * Get an owner
+ */
+  router.get('/:owner_id', checkJwt, (req, res, next) => {
+
+    // Check accepts
+    if (utility_errors.jsonAccepts(req) == false) {
+      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+      return;
+    };
+
+    // Get owner
+    model.Retrieve('owners', parseInt(req.params.owner_id))
+      .then(ow => {
+
+        // Owner does not exist
+        if (ow[0] == undefined) {
+           // Build message and send response
+          let message = JSON.stringify({
+            Error: "The specified owner does not exist"});
+            response.sendResponse(res, message, 404);
+            return;
+        };
+
+        // Check if owner making request
+        if (ow[0]['sub'] != req.user.sub) {
+           // Build message and send response
+          let message = JSON.stringify({
+          Error: "Only owner can access owner"});
+          response.sendResponse(res, message, 403);
+          return;
+          };
+
+        // Set id Field
+        const objsymbol = Object.getOwnPropertySymbols(ow[0])
+        let boat_id =parseInt(ow[0][objsymbol[0]].id)
+        ow[0]['id'] = boat_id;
+
+        // Add self property
+        ow[0]['self'] = url.generateUrl(req.protocol, req.get('host'), req.url, 'owners', ow[0]['id']);
+
+        // Send response to client
+        response.sendResponse(res, ow[0], 200);
+        });
+  });
  /**
  * Get /owners
  * 
  * Gets a list of all owners
  */
   router.get('/', checkJwt, async (req, res, next) => {
+
+    // Check accepts
+    if (utility_errors.jsonAccepts(req) == false) {
+      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+      return;
+    };
 
     // Returns a list of all owners
     model.RetrieveList('owners', req)
@@ -94,6 +160,13 @@ const checkJwt = jwt({
  * List all the boats for owner
  */
   router.get('/:owner_id/boats', checkJwt, async (req, res, next) => {
+
+    // Check accepts
+    if (utility_errors.jsonAccepts(req) == false) {
+      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+      return;
+    };
+
     // Set owner 
     let owner = await model.Retrieve('owners', parseInt(req.params.owner_id), req);
 
@@ -127,10 +200,16 @@ const checkJwt = jwt({
  * Add self
  */
 router.get('/:owner_id/loads', checkJwt, async (req, res, next) => {
+
+    // Check accepts
+    if (utility_errors.jsonAccepts(req) == false) {
+      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+      return;
+    };
+
     // get owner
     let owner = await ownerHelpers.getOwnerById(req, res);
-    
-
+  
     // owner does not exist
     if (owner == false) {
       // Build message and send response
@@ -218,7 +297,6 @@ router.delete('/:owner_id', checkJwt, async(req, res, next) => {
   ownerHelpers.deleteOwner(req, res);
   res.status(204).send(JSON.stringify({}));
   return;
-
 });
 
 /**
@@ -232,27 +310,27 @@ router.use((err, req, res, next) => {
     if (req.method == "POST" || req.method == "GET") {
       ownerErrors.postError(res);
       return;
-      
-    } else {
-    let owner = req.path.slice(1, -6);
-    model.RetrieveOwners('boat', owner, true)
-    .then((result) => {
-      // if boats, send response
-      if (result[0]){
-
+    } 
+    else {
+      // Get a list of all owners and their boats
+      let owner = req.path.slice(1, -6);
+      model.RetrieveOwners('boat', owner, true)
+      .then((result) => {
+        // if boats, send response
+        if (result[0]){
           // Loop through response, add id from datastore to response
-        for (let index = 0; index < result[0].length; index++) {
-          const objsymbol = Object.getOwnPropertySymbols(result[0][index])
-          let boat_id =parseInt(result[0][index][objsymbol[0]].id)
-          result[0][index]['id'] = boat_id;
-        };
-
-          response.sendResponse(res, result[0], 200);
+          for (let index = 0; index < result[0].length; index++) {
+            const objsymbol = Object.getOwnPropertySymbols(result[0][index])
+            let boat_id =parseInt(result[0][index][objsymbol[0]].id)
+            result[0][index]['id'] = boat_id;
+          };
+          // send response
+            response.sendResponse(res, result[0], 200);
       } else { // no boats for user, send empty list
           response.sendResponse(res, [], 200);
-      }
-  })
-  }
+        }
+      });
+    }
   }
 });
   module.exports = router;

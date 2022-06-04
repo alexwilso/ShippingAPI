@@ -66,6 +66,7 @@ app.use((req, res) => {
 
 // Basic error handler
 app.use((err, req, res, next) => {
+  
   /* jshint unused:false */
   console.error(err);
   // If our routes specified a specific response, then send that. Otherwise,
