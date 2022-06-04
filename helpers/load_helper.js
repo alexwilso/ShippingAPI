@@ -166,7 +166,6 @@ const getAllLoads = (req, res) => {
   // Get all loads
   model.Retrieve('load', null, req)
     .then((load) =>{
-      console.log(load);
       // Add boat to return message
       formattedLoads = {
         loads: load[0]
@@ -193,10 +192,19 @@ const getAllLoads = (req, res) => {
 /**
  *  Assigns load to boat
  */
-const assignLoadToBoat = (load, res, check, load_id) => {
+const assignLoadToBoat = (load, res, check, load_id, carrierId) => {
+
+    // Load to be updated
+    let updatedLoad = {
+    volume: load.volume,
+    item: load.item,
+    creation_date: load.creation_date,
+    owner: load.owner,
+    carrier: carrierId
+  };
 
   // Update load
-  model.Update('load', load, load_id)
+  model.Update('load', updatedLoad, load_id)
     .then((loaded) =>{
 
        // if check no response to be sent to client, return false

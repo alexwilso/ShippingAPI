@@ -116,16 +116,20 @@ router.patch('/:load_id', checkJwt, async (req, res, next) => {
   for (const key in req.body) {
     load[key] = req.body[key];
   };
-  // Load to be updated
-  let newLoad = {
-    volume: load.volume, 
-    item: load.item, 
-    creation_date: load.creation_date, 
-    carrier: load.carrierid,
-    owner: req.user.sub
-  };
+
+  // Assign carrier
+  load.carrier = load.carrierid;
+
+  // // Load to be updated
+  // let newLoad = {
+  //   volume: load.volume, 
+  //   item: load.item, 
+  //   creation_date: load.creation_date, 
+  //   carrier: load.carrierid,
+  //   owner: req.user.sub
+  // };
   // Updates load to assigned boat
-  let t = await load_helper.assignLoadToBoat(newLoad, res, true, parseInt(req.params.load_id));
+  let t = await load_helper.assignLoadToBoat(load, res, true, parseInt(req.params.load_id), load.carrierid);
 
   // Send response to user
   response.sendResponse(res, load, 200)

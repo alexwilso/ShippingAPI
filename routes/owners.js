@@ -20,7 +20,6 @@ const load_helper = require('../helpers/load_helper');
 // datastore model
 const model = require('../models/model-datastore');
 const {Datastore} = require('@google-cloud/datastore');
-const { load } = require('@grpc/grpc-js');
 
 
 // Checks for valid jwt
@@ -114,18 +113,18 @@ const checkJwt = jwt({
         ownerHelpers.getOwnerBoats(req, res);
         return;
         } 
-        else { 
-          // gets a list of all public boats for owner
-          ownerHelpers.getAllOwnerPublicBoats(res, owner);
-          return;
-        }
+    else { 
+        // gets a list of all public boats for owner
+        ownerHelpers.getAllOwnerPublicBoats(res, owner);
+        return;
+      };
   });
-
 
 /**
  * GET /owner/:owner_id/loads
  * 
  * List all the loads for owner
+ * Add self
  */
 router.get('/:owner_id/loads', checkJwt, async (req, res, next) => {
     // get owner
@@ -206,14 +205,14 @@ router.delete('/:owner_id', checkJwt, async(req, res, next) => {
 
       // Unload loads on owners boats
       if (element.id == el.carrier) {
-        let unload = {
-          volume: el.volume, 
-          item: el.item, 
-          creation_date: el.creation_date, 
-          carrier: null,
-          owner: el.owner
-        };
-      load_helper.assignLoadToBoat(unload, res, true, loadId);
+        // let unload = {
+        //   volume: el.volume, 
+        //   item: el.item, 
+        //   creation_date: el.creation_date, 
+        //   carrier: null,
+        //   owner: el.owner
+        // };
+      load_helper.assignLoadToBoat(el, res, true, loadId, null);
       };
     });
     // Delete boat
@@ -252,7 +251,7 @@ router.use((err, req, res, next) => {
           let boat_id =parseInt(result[0][index][objsymbol[0]].id)
           result[0][index]['id'] = boat_id;
         };
-        
+
           response.sendResponse(res, result[0], 200);
       } else { // no boats for user, send empty list
           response.sendResponse(res, [], 200);

@@ -80,7 +80,6 @@ router.get('/:boat_id', checkJwt, (req, res, next) => {
 
 });
 
-
  /**
  * GET /boats
  *
@@ -116,6 +115,7 @@ router.get('/:boat_id', checkJwt, (req, res, next) => {
                     result[0].splice(i, 1);
                   }; 
                 }
+                
                 // Adds loads to boat
                 el.loads = boat_helper.addLoadToBoat(loadsList, el.id, req)
               });
@@ -141,6 +141,7 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
   let boat_id_request = req.params.boat_id; 
   // Get boat
   let boat = await boat_helper.getBoat(req, res, true);
+
   // Revert boat_id to original
   req.params.boat_id = boat_id_request;
 
@@ -163,9 +164,7 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
   // Delete boat and send respnse to client
   boat_helper.deleteBoat(boat.boat.id, res, false);
   return;
-
 });
-
 
   /**
  * PUT boats/:boat_id/loads/:load_id
@@ -190,7 +189,6 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
         return;
       }
 
-
       // If boat and load don't exist
       if (!boat.exist || !load.exist) {
         
@@ -209,8 +207,7 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
         response.sendResponse(res, message, 401);
         return;
       };
-
-        
+  
       // And load is unassigned
       if (load.load.carrier != null) {
 
@@ -222,17 +219,17 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
 
       };
 
-      // Load to be updated
-      let updatedLoad = {
-        volume: load.load.volume,
-        item: load.load.item,
-        creation_date: load.load.creation_date,
-        carrier: boat.boat.id,
-        owner: load.load.owner
-      }
+      // // Load to be updated
+      // let updatedLoad = {
+      //   volume: load.load.volume,
+      //   item: load.load.item,
+      //   creation_date: load.load.creation_date,
+      //   carrier: boat.boat.id,
+      //   owner: load.load.owner
+      // }
       
       // Assign load to boat
-      load_helper.assignLoadToBoat(updatedLoad, res, false, load.load.id);
+      load_helper.assignLoadToBoat(load.load, res, false, load.load.id, boat.boat.id);
       return;
    });
 
@@ -263,10 +260,10 @@ router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
 
     // Check owner
     // Check if correct owner
-    if (load_helper.checkOwner(req.user.sub, load.load.owner) == false) {
+    if (load_helper.checkOwner(req.user.sub, load.load.owner) == false || boat.owner == req.user.sub) {
 
       // Build message and send resposne
-      let message = JSON.stringify({"Error":"Only load owner can remove load from boat"});
+      let message = JSON.stringify({"Error":"Only load or boat owner can remove load from boat"});
       response.sendResponse(res, message, 401);
       return;
     }; 
@@ -285,16 +282,16 @@ router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
     // Both boat and load exist
     // Load is on boat
       if (load.load.carrier.id == req.params.boat_id) {
-         // Load to be updated
-         let updatedLoad = {
-          volume: load.load.volume,
-          item: load.load.item,
-          creation_date: load.load.creation_date,
-          owner: load.load.owner,
-          carrier: null
-        };
+        //  // Load to be updated
+        //  let updatedLoad = {
+        //   volume: load.load.volume,
+        //   item: load.load.item,
+        //   creation_date: load.load.creation_date,
+        //   owner: load.load.owner,
+        //   carrier: null
+        // };
         // Update boat
-        load_helper.assignLoadToBoat(updatedLoad, res, false, load.load.id);
+        load_helper.assignLoadToBoat(load.load, res, false, load.load.id, null);
       } ;
 });
 
@@ -317,9 +314,8 @@ router.get('/:boat_id/loads', checkJwt, async (req, res, next) => {
     let loads = boat.boat.loads;
     let returnLoads = await load_helper.loadsForBoatWithId(loads, req, res);
 
-    // Error message
+    // List of loads
     let message = JSON.stringify({loads: returnLoads});
-
 
     // Send response
     response.sendResponse(res, message, 200);
@@ -362,27 +358,34 @@ router.get('/:boat_id/loads', checkJwt, async (req, res, next) => {
 
                 // Add id to boats
                 let boatsId = boat_helper.addIdToBoats(result[0]);
+                let val = boatsId.length;
 
                   // Loop through response, add id from datastore to response
-                  for (let index = 0; index < result[0].length; index++) {
+                  for (let index = 0; index < boatsId.length; index++) {
+
                     // If boat is not public, remove it
-                    if (result[0][index].public == 'false') {
-                      result[0].splice(index, 1); // Remove if not public
+                    if (boatsId[index].public == 'false') {
+                      boatsId.splice(index, 1); // Remove if not public
+                      index--; // removing from list, move back index
                     } else {
                         
                     // Adds loads to boat
-                    result[0][index]['loads'] = boat_helper.addLoadToBoat(loadsList, result[0][index].id, req)
+                    boatsId[index]['loads'] = boat_helper.addLoadToBoat(loadsList, boatsId[index].id, req);
+
+                    boatsId[index]['self'] = url.generateUrl(req.protocol, req.get('host'), req.url, 'boats', boatsId[index]['id'])
                     };
                   };
 
                   // Send response
                   response.sendResponse(res, boatsId, 200);
                   return;
+
               } else { // no boats for user, send empty list
 
-                  // Send response
-                  response.sendResponse(res, [], 200);
-                  return;
+                // Send response
+                response.sendResponse(res, [], 200);
+                return;
+
               }
           })
             .catch(err => console.log(err));

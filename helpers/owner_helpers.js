@@ -41,16 +41,21 @@ const boat_helper = require('../helpers/boat_helpers');
       // if boats, send response
       if (result[0]){
 
+        // Add id to baots
+        boat_helper.addIdToBoats(result[0]);
+
         // Loop through response, add id from datastore to response
         for (let index = 0; index < result[0].length; index++) {
-          const objsymbol = Object.getOwnPropertySymbols(result[0][index])
-          let boat_id =parseInt(result[0][index][objsymbol[0]].id)
-          result[0][index]['id'] = boat_id;
-        }
-      // return response to requester
-      if (check == false) {
-        return result[0];
-      };
+          // const objsymbol = Object.getOwnPropertySymbols(result[0][index])
+          // let boat_id =parseInt(result[0][index][objsymbol[0]].id)
+          // result[0][index]['id'] = boat_id;
+          result[0][index].self = url.generateUrl(req.protocol, req.get('host'), req.url, 'boats', result[0].id);
+        };
+          
+        // return response to requester
+        if (check == false) {
+          return result[0];
+        };
 
       // send response
       response.sendResponse(res, result[0], 200);
