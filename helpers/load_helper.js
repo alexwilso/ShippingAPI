@@ -161,12 +161,21 @@ const insertLoad = (req, res) => {
 /**
  *  Gets all loads in datastore.
  */
-const getAllLoads = (req, res) => {
+const getAllLoads = async (req, res) => {
   
   // Get all loads
   model.Retrieve('load', null, req)
-    .then((load) =>{
-      // Add boat to return message
+    .then(async (load) =>{
+
+      // Add id to return
+      load[0] = await boat_helper.addIdToBoats(load[0]);
+
+      // Add url to loads
+      load[0].forEach(el => {
+        el.self = url.generateUrl(req.protocol, req.get('host'), req.url, 'loads', el.id);
+      });
+
+      // Add loads to return message
       formattedLoads = {
         loads: load[0]
       };

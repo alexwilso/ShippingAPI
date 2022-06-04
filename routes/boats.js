@@ -358,7 +358,6 @@ router.get('/:boat_id/loads', checkJwt, async (req, res, next) => {
 
                 // Add id to boats
                 let boatsId = boat_helper.addIdToBoats(result[0]);
-                let val = boatsId.length;
 
                   // Loop through response, add id from datastore to response
                   for (let index = 0; index < boatsId.length; index++) {
