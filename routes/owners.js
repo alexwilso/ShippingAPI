@@ -37,7 +37,7 @@ const checkJwt = jwt({
     algorithms: ['RS256'],
 
   });
-  // https://wilsoal9-493.us.auth0.com/.well-known/jwks.json//api/v2/users
+  // https://wilsoal9-493.us.auth0.com/api/v2/users
 
 
   /**
