@@ -180,7 +180,7 @@ router.delete('/:owner_id', checkJwt, async(req, res, next) => {
     // Build message and send response
     let message = JSON.stringify({
       Error: "Invalid permission... Must be owner to delete"});
-    response.sendResponse(res, message, 401);
+    response.sendResponse(res, message, 403);
     return;
   };
 
@@ -205,13 +205,8 @@ router.delete('/:owner_id', checkJwt, async(req, res, next) => {
 
       // Unload loads on owners boats
       if (element.id == el.carrier) {
-        // let unload = {
-        //   volume: el.volume, 
-        //   item: el.item, 
-        //   creation_date: el.creation_date, 
-        //   carrier: null,
-        //   owner: el.owner
-        // };
+      
+      // assigns load to a boat
       load_helper.assignLoadToBoat(el, res, true, loadId, null);
       };
     });

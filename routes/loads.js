@@ -33,7 +33,6 @@ const checkJwt = jwt({
   algorithms: ['RS256']
 });
 
-
  /**
  * POST /loads
  *
@@ -53,22 +52,20 @@ router.post('/', checkJwt, (req, res, next) => {
     let message = JSON.stringify({Error :"The request object is missing at least one of the required attributes"});
 
     // Send Response
-    response.sendResponse(res, message, 400);
-    
-  }
+    response.sendResponse(res, message, 400); 
+  };
 });
 
-  /**
- * GET /loads/:load_id
- * 
- * Allows you to get an existing slip.
- */
+/**
+* GET /loads/:load_id
+* 
+* Allows you to get an existing slip.
+*/
 router.get('/:load_id', checkJwt, (req, res, next) => {
   
   // Get load to send to client
   load_helper.getLoad(req, res, false, false);
 });
-
 
   /**
  * GET /loads
@@ -79,14 +76,13 @@ router.get('/', checkJwt, (req, res, next) => {
   
   // Get all loads and send to client
   load_helper.getAllLoads(req, res);
-
 });
 
 /**
- * Patch /loads/:/load_id
- * 
- * Edit a load
- */
+* Patch /loads/:load_id
+* 
+* Edit a load
+*/
 router.patch('/:load_id', checkJwt, async (req, res, next) => {
 
   // Get load
@@ -108,10 +104,9 @@ router.patch('/:load_id', checkJwt, async (req, res, next) => {
   if (load_helper.checkOwner(req.user.sub, load.owner) == false) {
     let message = JSON.stringify({"Error":"Only owner can update load"});
 
-    response.sendResponse(res, message, 401);
+    response.sendResponse(res, message, 403);
     return;
   };
-
 
   for (const key in req.body) {
     load[key] = req.body[key];
@@ -120,14 +115,6 @@ router.patch('/:load_id', checkJwt, async (req, res, next) => {
   // Assign carrier
   load.carrier = load.carrierid;
 
-  // // Load to be updated
-  // let newLoad = {
-  //   volume: load.volume, 
-  //   item: load.item, 
-  //   creation_date: load.creation_date, 
-  //   carrier: load.carrierid,
-  //   owner: req.user.sub
-  // };
   // Updates load to assigned boat
   let t = await load_helper.assignLoadToBoat(load, res, true, parseInt(req.params.load_id), load.carrierid);
 
@@ -135,11 +122,11 @@ router.patch('/:load_id', checkJwt, async (req, res, next) => {
   response.sendResponse(res, load, 200)
 });
 
-  /**
- * DELETE /loads/:load_ids
- * 
- * Deletes load. Updates boat that was carrying it.
- */
+/**
+* DELETE /loads/:load_ids
+* 
+* Deletes load. Updates boat that was carrying it.
+*/
 router.delete('/:load_id', checkJwt, async (req, res, next) => {
 
    // Get load
@@ -152,10 +139,11 @@ router.delete('/:load_id', checkJwt, async (req, res, next) => {
      if (load_helper.checkOwner(req.user.sub, load.load.owner) == false) {
        let message = JSON.stringify({"Error":"Only owner can delete load"});
 
-       response.sendResponse(res, message, 401);
+       response.sendResponse(res, message, 403);
        return;
      }
 
+     // Delete load
      load_helper.deleteLoad(load.load.id, res);
      return;
 

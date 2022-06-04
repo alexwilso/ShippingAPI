@@ -61,7 +61,6 @@ const getBoat = async (req, res, check) => {
     // Boat exist
      if (boat[0]) {
 
-
       // Private boat and incorrect owner, send error
       let ownerRequest = boat[0]['owner'] == req.user.sub
       if(boat[0]['public'] == 'false' && ownerRequest == false){
@@ -72,7 +71,6 @@ const getBoat = async (req, res, check) => {
         boat_errors.privateBoat(res);
         return;
       }
-
 
       // list of loads on boat to be returned
       let boatLoads = [];

@@ -9,11 +9,11 @@ class boatErrors {
   privateBoat(res){
     // Json Message
     let errorMessage = {
-    "Error": "invalid permission..."
+    "Error": "Only boat owner can view this boat"
   };
 
   // Send response to client
-  response.sendResponse(res, errorMessage, 401);
+  response.sendResponse(res, errorMessage, 403);
   }
 
   /**
