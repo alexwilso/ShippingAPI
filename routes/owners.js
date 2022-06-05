@@ -125,7 +125,7 @@ const checkJwt = jwt({
  * 
  * Gets a list of all owners
  */
-  router.get('/', checkJwt, async (req, res, next) => {
+  router.get('/', async (req, res, next) => {
 
     // Check accepts
     if (utility_errors.jsonAccepts(req) == false) {
@@ -138,6 +138,11 @@ const checkJwt = jwt({
       .then((result) => {
             // if owners, send response
             if (result[0]){
+
+              // Remove loads from owners
+              result[0].forEach(el => {
+                delete el['loads']
+              });
               
               // Adds ids to owners
               let idOwners = ownerHelpers.addIdToOwners(result[0]);

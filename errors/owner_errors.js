@@ -23,17 +23,26 @@ class ownersErrors{
         
         // If owner exist
         if (element.sub === sub) {
-          // Set error message
-          let message = JSON.stringify({Error :"Owner already exist"});
-
-          // Send response
-          response.sendResponse(res, message, 400);
+          // Set error and send response
+          this.ownerExist(res);
 
           return true;
         }
       }
       return false;
-  }
+  };
+
+  /**
+   * Owner already exist
+   */
+    ownerExist(res){
+
+      // Set error message
+      let message = JSON.stringify({Error :"Owner already exist"});
+
+      // Send response
+      response.sendResponse(res, message, 400);
+    };
 
 } module.exports = new ownersErrors();
 
