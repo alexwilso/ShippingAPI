@@ -10,11 +10,11 @@ const jwt = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
 // Error Handeling
 const errors = require('../errors/utility_errors');
-const ownerErrors = require('../errors/owner_errors');
+const owner_errors = require('../errors/owner_errors');
 // Client Response
 const response = require('../utility/response');
 // Helpers
-const ownerHelpers = require('../helpers/owner_helpers');
+const owner_helpers = require('../helpers/owner_helpers');
 const boat_helper = require('../helpers/boat_helpers');
 const load_helper = require('../helpers/load_helper');
 const utility_errors = require('../errors/utility_errors');
@@ -64,12 +64,12 @@ const checkJwt = jwt({
       });
 
     // Check if owner already exist
-    if(ownerErrors.checkExist(res, ownersList, req.body.sub)){
+    if(owner_errors.checkExist(res, ownersList, req.body.sub)){
       return;
     }
 
     // Add Owner
-    ownerHelpers.insertOwner(req, res);
+    owner_helpers.insertOwner(req, res);
   });
 
 
@@ -91,22 +91,14 @@ const checkJwt = jwt({
       .then(ow => {
 
         // Owner does not exist
-        if (ow[0] == undefined) {
-           // Build message and send response
-          let message = JSON.stringify({
-            Error: "The specified owner does not exist"});
-            response.sendResponse(res, message, 404);
-            return;
+        if (owner_errors.ownerDoesNotExist(res, ow[0]) == true) {
+          return;
         };
 
-        // Check if owner making request
-        if (ow[0]['sub'] != req.user.sub) {
-           // Build message and send response
-          let message = JSON.stringify({
-          Error: "Only owner can access owner"});
-          response.sendResponse(res, message, 403);
-          return;
-          };
+        // Check if owner is making request
+        if(owner_errors.invalidPermission(req, res, ow[0]) == true){
+          return
+        };
 
         // Set id Field
         const objsymbol = Object.getOwnPropertySymbols(ow[0])
@@ -145,7 +137,7 @@ const checkJwt = jwt({
               });
               
               // Adds ids to owners
-              let idOwners = ownerHelpers.addIdToOwners(result[0]);
+              let idOwners = owner_helpers.addIdToOwners(result[0]);
   
               // Send response
               response.sendResponse(res, idOwners, 200);
@@ -174,26 +166,22 @@ const checkJwt = jwt({
 
     // Set owner 
     let owner = await model.Retrieve('owners', parseInt(req.params.owner_id), req);
-
-    // owner does not exist
-    if (owner == false) {
-    // Build message and send response
-      let message = JSON.stringify({
-      Error: "The specified owner does not exist"});
-      response.sendResponse(res, message, 404);
+    
+    // Owner does not exist
+    if (owner_errors.ownerDoesNotExist(res, owner) == true) {
       return;
-      };
+    };
 
     // If owner is accessing their boats, display all
     if (owner[0].sub == req.user.sub) {
 
       // Get owner boats and send response to user
-        ownerHelpers.getOwnerBoats(req, res);
+        owner_helpers.getOwnerBoats(req, res);
         return;
         } 
     else { 
         // gets a list of all public boats for owner
-        ownerHelpers.getAllOwnerPublicBoats(res, owner);
+        owner_helpers.getAllOwnerPublicBoats(res, owner);
         return;
       };
   });
@@ -213,14 +201,10 @@ router.get('/:owner_id/loads', checkJwt, async (req, res, next) => {
     };
 
     // get owner
-    let owner = await ownerHelpers.getOwnerById(req, res);
-  
-    // owner does not exist
-    if (owner == false) {
-      // Build message and send response
-      let message = JSON.stringify({
-      Error: "The specified owner does not exist"});
-      response.sendResponse(res, message, 404);
+    let owner = await owner_helpers.getOwnerById(req, res);
+
+    // Owner does not exist
+    if (owner_errors.ownerDoesNotExist(res, owner) == true) {
       return;
     };
 
@@ -248,24 +232,16 @@ router.get('/:owner_id/loads', checkJwt, async (req, res, next) => {
 router.delete('/:owner_id', checkJwt, async(req, res, next) => {
 
   // get owner
-  let owner = await ownerHelpers.getOwnerById(req, res);
+  let owner = await owner_helpers.getOwnerById(req, res);
   
   // Owner does not exist
-  if (owner == false) {
-    // Build message and send response
-    let message = JSON.stringify({
-      Error: "The specified owner does not exist"});
-    response.sendResponse(res, message, 404);
+  if (owner_errors.ownerDoesNotExist(res, owner) == true) {
     return;
-  }
+  };
 
-  // Check if owner trying to delete self
-  if (owner.sub != req.user.sub) {
-    // Build message and send response
-    let message = JSON.stringify({
-      Error: "Invalid permission... Must be owner to delete"});
-    response.sendResponse(res, message, 403);
-    return;
+  // Check if owner is making request
+  if(owner_errors.invalidPermission(req, res, owner) == true){
+    return
   };
 
   // Make a list of loads
@@ -299,7 +275,7 @@ router.delete('/:owner_id', checkJwt, async(req, res, next) => {
   });
 
   // Delete owner and send response to client
-  ownerHelpers.deleteOwner(req, res);
+  owner_helpers.deleteOwner(req, res);
   res.status(204).send(JSON.stringify({}));
   return;
 });
@@ -313,7 +289,7 @@ router.use((err, req, res, next) => {
   if (err.name === "UnauthorizedError") {
 
     if (req.method == "POST" || req.method == "GET") {
-      ownerErrors.postError(res);
+      owner_errors.postError(res);
       return;
     } 
     else {
@@ -323,12 +299,14 @@ router.use((err, req, res, next) => {
       .then((result) => {
         // if boats, send response
         if (result[0]){
+          
           // Loop through response, add id from datastore to response
           for (let index = 0; index < result[0].length; index++) {
             const objsymbol = Object.getOwnPropertySymbols(result[0][index])
             let boat_id =parseInt(result[0][index][objsymbol[0]].id)
             result[0][index]['id'] = boat_id;
           };
+
           // send response
             response.sendResponse(res, result[0], 200);
       } else { // no boats for user, send empty list

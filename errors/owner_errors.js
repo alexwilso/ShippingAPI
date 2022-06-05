@@ -44,5 +44,42 @@ class ownersErrors{
       response.sendResponse(res, message, 400);
     };
 
+    /**
+     * Owner does not exist
+     */
+    ownerDoesNotExist(res, owner){
+
+      // Owner does not exist
+      if (owner == undefined || owner == false) {
+
+        // Build message and send response
+        let message = JSON.stringify({
+          Error: "The specified owner does not exist"});
+
+          // Send Response
+          response.sendResponse(res, message, 404);
+          return true;
+      };
+      return false;
+    };
+
+    /**
+     * Checks if owner making request, if not sends error and returns true
+     * @param {response} res 
+     * @param {owner object} owner 
+     */
+    invalidPermission(req, res, owner){
+
+      // Check if owner making request
+      if (owner['sub'] != req.user.sub) {
+        // Build message and send response
+        let message = JSON.stringify({
+        Error: "Must be owner to access"});
+        response.sendResponse(res, message, 403);
+        return true;
+      };
+      return false;
+    }
+
 } module.exports = new ownersErrors();
 

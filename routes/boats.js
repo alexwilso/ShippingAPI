@@ -12,8 +12,8 @@ const jwksRsa = require('jwks-rsa');
 
 // Error handeling
 const errors = require('../errors/utility_errors');
-const ownerErrors = require('../errors/owner_errors');
-const boatErrors = require('../errors/boat_errors');
+const owner_errors = require('../errors/owner_errors');
+const boat_errors = require('../errors/boat_errors');
 const utility_errors = require('../errors/utility_errors');
 
 // Client response
@@ -173,12 +173,12 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
   // Boat does not exist
   if (!boat.exist) {
     // Send Error message
-    boatErrors.nonexistingBoatError(res);
+    boat_errors.nonexistingBoatError(res);
     return;
   };
   
   // Check incorrect owner, sends error to client if incorrect
-  if (boatErrors.wrongOwner(req.user.sub, boat.boat.owner, res)) {
+  if (boat_errors.wrongOwner(req.user.sub, boat.boat.owner, res)) {
     return;
   };
 
@@ -190,22 +190,22 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
   return;
 });
 
-  /**
-   * Patch boats/:boat_id
-   * Updating boat using patch
-   */
-  router.patch('/:boat_id', checkJwt, (req, res, next) => {
+/**
+ * Patch boats/:boat_id
+ * Updating boat using patch
+ */
+router.patch('/:boat_id', checkJwt, (req, res, next) => {
 
-    // Check accepts
-    if (utility_errors.jsonAccepts(req) == false) {
-      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
-      return;
-    };
+  // Check accepts
+  if (utility_errors.jsonAccepts(req) == false) {
+    response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+    return;
+  };
 
-    // method not supported
-    response.sendResponse(res, {}, 405)
-    return;                                                                                                                                  
-  });
+  // method not supported
+  response.sendResponse(res, {}, 405)
+  return;                                                                                                                                  
+});
 
   /**
  * PUT boats/:boat_id/loads/:load_id
@@ -228,25 +228,15 @@ router.delete('/:boat_id', checkJwt, async (req, res, next) => {
     // Revert boat_id to original
     req.params.boat_id = boat_id_request;
 
-    // if boat is private
-    if (boat == "private") {
-      // Set message and send response
-      let message = JSON.stringify({
-      Error: "Private boat, only owner can assign load to this boat"
-      });
-      response.sendResponse(res, message, 403);
+    // Private boat
+    if (boat_errors.privateBoatEror(res, boat)){
       return;
-    };
+    }
 
-      // If boat and load don't exist
-      if (!boat.exist || !load.exist) {
-        
-      // Build message and send response
-      let message = JSON.stringify({
-      Error: "The specified boat and/or load does not exist"});
-      response.sendResponse(res, message, 404);
-      return;
-    };
+  // If boat and load don't exist      
+  if (boat_errors.noLoadBoatExist(res, boat, load) == true) {
+    return;
+  };
 
     // Check if correct owner
     if (load_helper.checkOwner(req.user.sub, load.load.owner) == false) {
@@ -287,35 +277,30 @@ router.delete('/:boat_id/loads/:load_id', checkJwt, async (req, res, next) => {
   // Revert boat_id to original
   req.params.boat_id = boat_id_request;
 
-  // If boat and load don't exist
-  if (!boat.exist || !load.exist) {
-    
+  // Load or boat does not exist
+  if (boat_errors.noLoadBoatExist(res, boat, load) == true) {
+    return;
+  };
+
+  // Check owner
+  // Check if correct owner
+  if (load_helper.checkOwner(req.user.sub, load.load.owner) == false || boat.owner == req.user.sub) {
+
+    // Build message and send resposne
+    let message = JSON.stringify({"Error":"Only load or boat owner can remove load from boat"});
+    response.sendResponse(res, message, 403);
+    return;
+  }; 
+  
+  // load not assigned to carrier
+  if (load.load.carrier == null || load.load.carrier.id != req.params.boat_id) {
+
     // Build message and send response
     let message = JSON.stringify({
-      Error: "The specified boat and/or load does not exist"});
+      Error: "No boat with this boat_id is loaded with the load with this load_id"});
       response.sendResponse(res, message, 404);
       return;
-    };
-
-    // Check owner
-    // Check if correct owner
-    if (load_helper.checkOwner(req.user.sub, load.load.owner) == false || boat.owner == req.user.sub) {
-
-      // Build message and send resposne
-      let message = JSON.stringify({"Error":"Only load or boat owner can remove load from boat"});
-      response.sendResponse(res, message, 403);
-      return;
-    }; 
-    
-    // load not assigned to carrier
-    if (load.load.carrier == null || load.load.carrier.id != req.params.boat_id) {
-
-      // Build message and send response
-      let message = JSON.stringify({
-        Error: "No boat with this boat_id is loaded with the load with this load_id"});
-        response.sendResponse(res, message, 404);
-        return;
-    };
+  };
 
      // Unload load from boat
       if (load.load.carrier.id == req.params.boat_id) {
@@ -430,7 +415,7 @@ router.get('/:boat_id/loads', checkJwt, async (req, res, next) => {
   }
   // Sends an error message
   else {
-    ownerErrors.postError(res);
+    owner_errors.postError(res);
     return;
   }
 });

@@ -155,5 +155,6 @@ const boat_helper = require('../helpers/boat_helpers');
     getAllOwnerPublicBoats,
     addIdToOwners,
     getOwnerById,
-    deleteOwner
+    deleteOwner,
+    
   }
