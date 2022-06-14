@@ -29,9 +29,9 @@ const config = {
   authRequired: false,
   auth0Logout: true,
   baseURL: 'http://localhost:8080',
-  clientID: 'zXpGZx4XQXhHODRnIlgbBWfnbL57sKEZ',
-  issuerBaseURL: `https://wilsoal9-493.us.auth0.com`,
-  secret: 'MqUYLNLiBQ5N6IgQCCQ05TNn1axAF-koX-99AgtPZ61pa-1bNOIXoXProHcTuKSf'
+  clientID: process.env.CLIENT_ID,
+  issuerBaseURL: `https://${process.env.DOMAIN}`,
+  secret: process.env.CLIENT_SECRET
 };
 
 // auth router attaches /login, /logout, and /callback routes to the baseURL

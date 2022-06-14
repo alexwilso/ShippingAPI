@@ -4,7 +4,7 @@ const {Datastore} = require('@google-cloud/datastore');
 
 // Instantiate a datastore client
 const datastore = new Datastore({
-  projectId: 'assignment6-349118',
+  projectId: process.env.PROJECT_ID,
 });
 
 
