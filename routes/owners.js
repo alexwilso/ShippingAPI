@@ -26,51 +26,49 @@ const url = require('../utility/url');
 
 // Checks for valid jwt
 const checkJwt = jwt({
-    secret: jwksRsa.expressJwtSecret({
-      cache: true,
-      rateLimit: true,
-      jwksRequestsPerMinute: 5,
-      jwksUri: `https://${process.env.DOMAIN}/.well-known/jwks.json`
-    }),
-    // Validate the audience and the issuer.
-    issuer: `https://${process.env.DOMAIN}/`,
-    algorithms: ['RS256'],
+  secret: jwksRsa.expressJwtSecret({
+    cache: true,
+    rateLimit: true,
+    jwksRequestsPerMinute: 5,
+    jwksUri: `https://wilsoal9-493.us.auth0.com/.well-known/jwks.json`
+  }),
+  // Validate the audience and the issuer.
+  issuer: `https://wilsoal9-493.us.auth0.com/`,
+  algorithms: ['RS256']
+});
 
-  });
-  // https://wilsoal9-493.us.auth0.com/api/v2/users
+/**
+* Post /owners
+* 
+* Create a new owner
+*/
+router.post('/', checkJwt, async (req, res, err) => {
 
+  // Check accepts
+  if (utility_errors.jsonAccepts(req) == false) {
+    response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+    return;
+  };
 
-  /**
-   * Post /owners
-   * 
-   * Create a new owner
-   */
-  router.post('/', checkJwt, async (req, res, err) => {
+  // Add email and sub to body
+  req.body.email = req.user.name;
+  req.body.sub = req.user.sub;
 
-    // Check accepts
-    if (utility_errors.jsonAccepts(req) == false) {
-      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
-      return;
-    };
+  // Make a list of owners
+  let ownersList = await model.RetrieveList('owners', req)
+    .then((owners) => {
+      return owners[0];
+    });
 
-    // Add email and sub to body
-    req.body.email = req.user.name;
-    req.body.sub = req.user.sub;
+  // Check if owner already exist
+  if(owner_errors.checkExist(res, ownersList, req.body.sub)){
+    return;
+  };
 
-    // Make a list of owners
-    let ownersList = await model.RetrieveList('owners', req)
-      .then((owners) => {
-        return owners[0];
-      });
-
-    // Check if owner already exist
-    if(owner_errors.checkExist(res, ownersList, req.body.sub)){
-      return;
-    }
-
-    // Add Owner
-    owner_helpers.insertOwner(req, res);
-  });
+  // Add Owner
+  owner_helpers.insertOwner(req, res);
+   
+});
 
 
 /**
@@ -78,151 +76,152 @@ const checkJwt = jwt({
  * 
  * Get an owner
  */
-  router.get('/:owner_id', checkJwt, (req, res, next) => {
+router.get('/:owner_id', checkJwt, (req, res, next) => {
 
-    // Check accepts
-    if (utility_errors.jsonAccepts(req) == false) {
-      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
-      return;
-    };
+  // Check accepts
+  if (utility_errors.jsonAccepts(req) == false) {
+    response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+    return;
+  };
 
-    // Get owner
-    model.Retrieve('owners', parseInt(req.params.owner_id))
-      .then(ow => {
+  // Get owner
+  model.Retrieve('owners', parseInt(req.params.owner_id))
+    .then(ow => {
 
-        // Owner does not exist
-        if (owner_errors.ownerDoesNotExist(res, ow[0]) == true) {
-          return;
-        };
+      // Owner does not exist
+      if (owner_errors.ownerDoesNotExist(res, ow[0]) == true) {
+        return;
+      };
 
-        // Check if owner is making request
-        if(owner_errors.invalidPermission(req, res, ow[0]) == true){
-          return
-        };
+      // Check if owner is making request
+      if(owner_errors.invalidPermission(req, res, ow[0]) == true){
+        return
+      };
 
-        // Set id Field
-        const objsymbol = Object.getOwnPropertySymbols(ow[0])
-        let boat_id =parseInt(ow[0][objsymbol[0]].id)
-        ow[0]['id'] = boat_id;
+      // Set id Field
+      const objsymbol = Object.getOwnPropertySymbols(ow[0])
+      let boat_id =parseInt(ow[0][objsymbol[0]].id)
+      ow[0]['id'] = boat_id;
 
-        // Add self property
-        ow[0]['self'] = url.generateUrl(req.protocol, req.get('host'), req.url, 'owners', ow[0]['id']);
+      // Add self property
+      ow[0]['self'] = url.generateUrl(req.protocol, req.get('host'), req.url, 'owners', ow[0]['id']);
 
-        // Send response to client
-        response.sendResponse(res, ow[0], 200);
-        });
-  });
- /**
- * Get /owners
- * 
- * Gets a list of all owners
- */
-  router.get('/', async (req, res, next) => {
+      // Send response to client
+      response.sendResponse(res, ow[0], 200);
+    });
+});
 
-    // Check accepts
-    if (utility_errors.jsonAccepts(req) == false) {
-      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
-      return;
-    };
+/**
+* Get /ownersx
+* Gets a list of all owners
+*/
+router.get('/', async (req, res, next) => {
 
-    // Returns a list of all owners
-    model.RetrieveList('owners', req)
-      .then((result) => {
-            // if owners, send response
-            if (result[0]){
+  // Check accepts
+  if (utility_errors.jsonAccepts(req) == false) {
+    response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+    return;
+  };
 
-              // Remove loads from owners
-              result[0].forEach(el => {
-                delete el['loads']
-              });
+  // Returns a list of all owners
+  model.RetrieveList('owners', req)
+    .then((result) => {
+      // if owners, send response
+      if (result[0]){
+
+        // Remove loads from owners
+        result[0].forEach(el => {
+          delete el['loads']
+          });
               
-              // Adds ids to owners
-              let idOwners = owner_helpers.addIdToOwners(result[0]);
+        // Adds ids to owners
+        let idOwners = owner_helpers.addIdToOwners(result[0]);
   
-              // Send response
-              response.sendResponse(res, idOwners, 200);
+        // Send response
+        response.sendResponse(res, idOwners, 200);
   
-          } else { // no owners, send empty list
-              response.sendResponse(res, [], 200);
-          }
-      })
-      .catch((err) => {
-        next(err);
-      });
-  });
+        } else { // no owners, send empty list
+          response.sendResponse(res, [], 200);
+        };
+    })
+    .catch((err) => {
+      next(err);
+    });
+});
 
 /**
  * GET /owners/:owner_id/boats
  *
  * List all the boats for owner
  */
-  router.get('/:owner_id/boats', checkJwt, async (req, res, next) => {
+router.get('/:owner_id/boats', checkJwt, async (req, res, next) => {
 
-    // Check accepts
-    if (utility_errors.jsonAccepts(req) == false) {
-      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
-      return;
-    };
+  // Check accepts
+  if (utility_errors.jsonAccepts(req) == false) {
+    response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+    return;
+  };
 
-    // Set owner 
-    let owner = await model.Retrieve('owners', parseInt(req.params.owner_id), req);
+  // Set owner 
+  let owner = await model.Retrieve('owners', parseInt(req.params.owner_id), req);
     
-    // Owner does not exist
-    if (owner_errors.ownerDoesNotExist(res, owner) == true) {
+  // Owner does not exist
+  if (owner_errors.ownerDoesNotExist(res, owner) == true) {
+    return;
+  };
+
+  // If owner is accessing their boats, display all
+  if (owner[0].sub == req.user.sub) {
+
+    // Get owner boats and send response to user
+      owner_helpers.getOwnerBoats(req, res);
+      return;
+      } 
+  else { 
+      // gets a list of all public boats for owner
+      owner_helpers.getAllOwnerPublicBoats(res, owner);
       return;
     };
-
-    // If owner is accessing their boats, display all
-    if (owner[0].sub == req.user.sub) {
-
-      // Get owner boats and send response to user
-        owner_helpers.getOwnerBoats(req, res);
-        return;
-        } 
-    else { 
-        // gets a list of all public boats for owner
-        owner_helpers.getAllOwnerPublicBoats(res, owner);
-        return;
-      };
-  });
+});
 
 /**
- * GET /owner/:owner_id/loads
- * 
- * List all the loads for owner
- * Add self
- */
+* GET /owner/:owner_id/loads
+* 
+* List all the loads for owner
+* Add self
+*/
 router.get('/:owner_id/loads', checkJwt, async (req, res, next) => {
 
-    // Check accepts
-    if (utility_errors.jsonAccepts(req) == false) {
-      response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
-      return;
-    };
+  // Check accepts
+  if (utility_errors.jsonAccepts(req) == false) {
+    response.sendResponse(res, {"Error": 'Not Acceptable'}, 406);
+    return;
+  };
 
-    // get owner
-    let owner = await owner_helpers.getOwnerById(req, res);
+  // get owner
+  let owner = await owner_helpers.getOwnerById(req, res);
 
-    // Owner does not exist
-    if (owner_errors.ownerDoesNotExist(res, owner) == true) {
-      return;
-    };
+  // Owner does not exist
+  if (owner_errors.ownerDoesNotExist(res, owner) == true) {
+    return;
+  };
 
-    // Make a list of loads
-    let loadsList = await model.RetrieveList('load', req)
-    .then((loads) => {
+  // Make a list of loads
+  let loadsList = await model.RetrieveList('load', req)
+  .then((loads) => {
     return loads[0];
-    });
+  });
 
-    let ownerLoads = [];
-    loadsList.forEach(el => {
-      // Add all ownerLoads to return list
-      if (owner.sub == el.owner) {
-        ownerLoads.push(el);
-      };
-    });
+  let ownerLoads = [];
 
-    response.sendResponse(res, ownerLoads, 200);
+  loadsList.forEach(el => {
+    // Add all ownerLoads to return list
+    if (owner.sub == el.owner) {
+      ownerLoads.push(el);
+    };
+  });
+
+  response.sendResponse(res, ownerLoads, 200);
 });
 /**
  * DELETE /:owner_id
@@ -299,16 +298,12 @@ router.use((err, req, res, next) => {
       .then((result) => {
         // if boats, send response
         if (result[0]){
-          
-          // Loop through response, add id from datastore to response
-          for (let index = 0; index < result[0].length; index++) {
-            const objsymbol = Object.getOwnPropertySymbols(result[0][index])
-            let boat_id =parseInt(result[0][index][objsymbol[0]].id)
-            result[0][index]['id'] = boat_id;
-          };
+
+          // Add id to response
+          let boats = boat_helper.addIdToBoats = result[0];
 
           // send response
-            response.sendResponse(res, result[0], 200);
+            response.sendResponse(res, boats, 200);
       } else { // no boats for user, send empty list
           response.sendResponse(res, [], 200);
         }

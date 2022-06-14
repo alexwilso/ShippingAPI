@@ -33,10 +33,10 @@ const checkJwt = jwt({
     cache: true,
     rateLimit: true,
     jwksRequestsPerMinute: 5,
-    jwksUri: `https://${process.env.DOMAIN}/.well-known/jwks.json`
+    jwksUri: `https://wilsoal9-493.us.auth0.com/.well-known/jwks.json`
   }),
   // Validate the audience and the issuer.
-  issuer: `https://${process.env.DOMAIN}/`,
+  issuer: `https://wilsoal9-493.us.auth0.com/`,
   algorithms: ['RS256']
 });
 
@@ -125,6 +125,7 @@ router.get('/:boat_id', checkJwt, (req, res, next) => {
               .then((loads) => {
               return loads[0];
               });
+              
               // Add id to loads
               loadsList = boat_helper.addIdToBoats(loadsList);
 

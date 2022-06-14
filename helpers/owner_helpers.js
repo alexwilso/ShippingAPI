@@ -5,7 +5,9 @@ const {Datastore} = require('@google-cloud/datastore');
 const boat_helper = require('../helpers/boat_helpers');
 
 /**
- *  Insert owner into datastore.
+*  Insert owner into datastore.
+ * @param {request} req 
+ * @param {respose} res 
  */
  const insertOwner = (req, res) => {
     // Set boats/loads to empty
@@ -155,6 +157,5 @@ const boat_helper = require('../helpers/boat_helpers');
     getAllOwnerPublicBoats,
     addIdToOwners,
     getOwnerById,
-    deleteOwner,
-    
+    deleteOwner, 
   }

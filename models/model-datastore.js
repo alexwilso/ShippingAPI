@@ -1,26 +1,25 @@
 'use strict';
 
 const {Datastore} = require('@google-cloud/datastore');
-// const ds = require('../datastore');
 
 // Instantiate a datastore client
 const datastore = new Datastore({
-    projectId: 'assignment6-349118',
-  });
+  projectId: 'assignment6-349118',
+});
 
 
 /**
- * Insert a entity into the database
- *
- * @param string key in datastore
- * @param {object} value The boat to insert.
- */
+* Insert a entity into the database
+*
+* @param string key in datastore
+* @param {object} value The boat to insert.
+*/
 const Insert = (key, value) => {
-    return datastore.insert({
-      key: datastore.key(key),
-      data: value,
-    });
-  };
+  return datastore.insert({
+    key: datastore.key(key),
+    data: value,
+  });
+};
 
 /**
  * Get entity/list of entities from datastore
@@ -29,7 +28,7 @@ const Insert = (key, value) => {
  * @param id int of item id in datastore
  */
 const Retrieve = async (key, id, req) => {
-query = datastore.createQuery(['__Stat_Total__'])
+  query = datastore.createQuery(['__Stat_Total__'])
   // Getting list of all entities
   if (id == null) {
 
@@ -52,8 +51,8 @@ query = datastore.createQuery(['__Stat_Total__'])
     // Get a item using id
     const itemKey = datastore.key([key, id]);
     return datastore.get(itemKey);
-  }
-}
+  };
+};
 
 /**
  * Update entity in datastore
@@ -70,21 +69,19 @@ const Update = (key, value, id) => {
   };
   // Update entity
   return datastore.update(entity);
-}
+};
  
 /**
  * Delete entity from datastore
  *
  * @param string key in datastore
  * @param id int of item id in datastore
- */
+*/
 const Remove = (key, id) => {
   const itemKey = datastore.key([key, id]);
 
   return datastore.delete(itemKey);
-}
-
-
+};
 
 /**
  * Get entity/list of entities from datastore

@@ -12,13 +12,13 @@ const jwksRsa = require('jwks-rsa');
 const model = require('../models/model-datastore');
 // error handeling
 const errors = require('../errors/utility_errors');
-const ownerErrors = require('../errors/owner_errors');
+const owner_errors = require('../errors/owner_errors');
+const load_errors = require('../errors/load_errors');
+const boat_errors = require('../errors/boat_errors');
 // Client Response
 const response = require('../utility/response');
 // helpers
 const load_helper = require('../helpers/load_helper');
-const owner_errors = require('../errors/owner_errors');
-const boat_errors = require('../errors/boat_errors');
 const utility_errors = require('../errors/utility_errors');
 
 // Checks for valid jwt
@@ -27,10 +27,10 @@ const checkJwt = jwt({
     cache: true,
     rateLimit: true,
     jwksRequestsPerMinute: 5,
-    jwksUri: `https://${process.env.DOMAIN}/.well-known/jwks.json`
+    jwksUri: `https://wilsoal9-493.us.auth0.com/.well-known/jwks.json`
   }),
   // Validate the audience and the issuer.
-  issuer: `https://${process.env.DOMAIN}/`,
+  issuer: `https://wilsoal9-493.us.auth0.com/`,
   algorithms: ['RS256']
 });
 
@@ -107,16 +107,12 @@ router.patch('/:load_id', checkJwt, async (req, res, next) => {
   // Get load
   let load = await load_helper.getLoad(req, res, true, false);
 
-  // Load does not exist
-  if (load == false) {
-     // Build message and send response
-     let message = JSON.stringify({
-      Error: "The specified load does not exist"});
-    response.sendResponse(res, message, 404);
+  // load does not exist
+  if (load_errors.noLoadExist(req, load)) {
     return;
   };
 
-  // Set loat
+  // Set load
   load = load.load;
 
   // Check if correct owner
@@ -135,7 +131,7 @@ router.patch('/:load_id', checkJwt, async (req, res, next) => {
   load.carrier = load.carrierid;
 
   // Updates load to assigned boat
-  let t = await load_helper.assignLoadToBoat(load, res, true, parseInt(req.params.load_id), load.carrierid);
+  load_helper.assignLoadToBoat(load, res, true, parseInt(req.params.load_id), load.carrierid);
 
   // Send response to user
   response.sendResponse(res, load, 200)

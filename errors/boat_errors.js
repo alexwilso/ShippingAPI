@@ -2,10 +2,10 @@ const response = require('../utility/response');
 
 class boatErrors {
   
-  /**
-   * Requesting permission to view a private boat
-   * 
-   */
+/**
+ * Requesting permission to view a private boat
+ * @param {response to client} res 
+ */
   privateBoat(res){
     // Json Message
     let errorMessage = {
@@ -17,7 +17,11 @@ class boatErrors {
   };
 
   /**
-   * Requesting permission on boat user does not own
+  * Requesting permission on boat user does not own
+   * @param {Client making request} requester 
+   * @param {Owner of boat} owner 
+   * @param {response to client} res 
+   * @returns
    */
   wrongOwner(requester, owner, res){
     // If user does not own boat
@@ -35,8 +39,9 @@ class boatErrors {
   
 
   /**
-   * Boat does not exist
-   */
+  * Boat does not exist
+  * @param {response to client} res 
+  */
   nonexistingBoatError(res){
   
     // Build message
@@ -49,7 +54,10 @@ class boatErrors {
   };
 
   /**
-   * Private boat
+   * Checks if boat is private, sends error to client if so.
+   * @param {response to client} res 
+   * @param {boat} boat 
+   * @returns boolean.
    */
   privateBoatEror(res, boat){
 
