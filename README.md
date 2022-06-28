@@ -1,6 +1,6 @@
 # Shipping API
 URL: https://assignment6-349118.uk.r.appspot.com/
-Endpoints: 
+<br /> Endpoints: 
   * POST, GET /boats
   * GET, PATCH, DELETE /boats/:boat_id
   * PUT, DELETE boats/:boat_id/loads/:load_id
